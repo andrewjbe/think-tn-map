@@ -55,7 +55,7 @@ ui <- fluidPage(
       selectInput(inputId = "fill_stat",
                   label = "Fill Statistic",
                   choices = choices_grouped,
-                  selected = "uninsured",
+                  selected = "uninsured_adults",
                   multiple = FALSE,
                   selectize = TRUE),
       htmlOutput('description_text_fill'),
@@ -92,7 +92,7 @@ ui <- fluidPage(
       leafletOutput('map'),
       # Absolute / compare stats panel -----------------------------------------
       tags$style("#plotly_panel {background-color: #FFFFFF; opacity: 0.9;}"), # Sets background color / alpha of absolute panel
-      # hidden(
+      hidden(
         absolutePanel(
           id = "plotly_panel",
           class = "panel panel-default",
@@ -103,14 +103,14 @@ ui <- fluidPage(
           right = 30,
           bottom = "auto",
           width = 400,
-          height = 650,
+          # height = 700,
           plotlyOutput('plotly'),
           wellPanel(
             # Comparison statistic
             selectInput(inputId = "stat2",
                         label = "Comparison Statistic",
                         choices = choices_grouped,
-                        selected = "child_poverty_pct",
+                        selected = "poverty_rate_all",
                         multiple = FALSE,
                         selectize = TRUE),
             # Stat2 nice description
@@ -124,7 +124,7 @@ ui <- fluidPage(
                                  label = "Set X and Y axis to begin at zero")
           ),
         )
-      # )
+      )
     )
   )
 )

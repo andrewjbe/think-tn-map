@@ -5,6 +5,7 @@
 
 # Dependencies and Configuration ===============================================
 library(shiny)
+library(bslib)
 library(readr)
 library(dplyr)
 library(here)
@@ -12,8 +13,12 @@ library(janitor)
 library(leaflet)
 library(sf)
 library(plotly)
+library(htmltools)
+library(htmlwidgets)
 options(scipen=999,
         readr.show_col_types = F)
+
+library(reactlog)
 
 format_num <- function(num){
   
@@ -59,12 +64,14 @@ county_shape <- read_rds(here("think-tn-map", "data", "tn-counties.rds")) |>
   
 # Server logic =================================================================
 function(input, output, session) {
+  
+  reactlog_enable()
 
   # Reactive variables / dataframes ============================================
   # Mapping Data reactive dataframe --------------------------------------------
   map_data.react <- reactive({
     z <- main_ds |>
-      select(county = 'county',
+      select(county,
              fill_stat = input$fill_stat,
              stat2 = input$stat2
       ) |>
@@ -81,41 +88,87 @@ function(input, output, session) {
     }
     return(z)
   })
+  
+  # Reactive values with currently selected fill stat info ---------------------
+  fill_stat_info <- reactive({
+    
+    info_ds |>
+      filter(variable == input$fill_stat)
+    
+  })
+  
+  stat2_info <- reactive({
+    
+    info_ds |>
+      filter(variable == input$stat2)
+    
+  })
 
   # Reactive variable w/ selected nice names -----------------------------------
-  fill_stat_metric_title.react <- reactive({
-    var_names[which(var_names$variable == input$fill_stat),] |>
-      pull(var = metric_title)
-  })
+  # fill_stat_metric_title.react <- reactive({
+  #   var_names[which(var_names$variable == input$fill_stat),] |>
+  #     pull(var = metric_title)
+  # })
 
-  stat2_metric_title.react <- reactive({
-    var_names[which(var_names$variable == input$stat2),] |>
-      pull(var = metric_title)
-  })
-
-  # Toggles ggplot axes to start at zero; corresponds to input$lims ------------
-  lims.react <- reactive({
-    if_else(input$lims == TRUE, 0, as.numeric(NA))
-  })
+  # stat2_metric_title.react <- reactive({
+  #   var_names[which(var_names$variable == input$stat2),] |>
+  #     pull(var = metric_title)
+  # })
   
   # Nicely formatted reactive description of fill stat -------------------------
   output$description_text_fill <- renderUI({
+    
+    # selected_metric_title <- var_names[which(var_names$variable == input$fill_stat),] |>
+    #   pull(var = metric_title)
+    # 
+    # str <- paste0(
+    #   "<b>", selected_metric_title, ":</b> ",
+    #   info_ds[which(info_ds$variable == input$fill_stat),] |> 
+    #     pull(var = "description"),
+    #   "<br><b>Source: </b>", 
+    #   info_ds[which(info_ds$variable == input$fill_stat),] |> 
+    #     pull(var = "source"),
+    #   " (", info_ds[which(info_ds$variable == input$fill_stat),] |> 
+    #     pull(var = "years"), ")"
+    # )
+    
     str <- paste0(
-      "<b>", fill_stat_metric_title.react(), ":</b> ",
-      info_ds[which(info_ds$variable == input$fill_stat),] |> pull(var = "description"),
-      "<br><b>Source: </b>", info_ds[which(info_ds$variable == input$fill_stat),] |> pull(var = "source"),
-      " (", info_ds[which(info_ds$variable == input$fill_stat),] |> pull(var = "years"), ")"
+      "<b>", fill_stat_info()$metric_title, ":</b> ",
+      fill_stat_info()$description,
+      "<br><b>Source: </b>", 
+      fill_stat_info()$source,
+      " (", 
+      fill_stat_info()$years, 
+      ")"
     )
     HTML(str)
+    
   })
 
   # Nicely formatted reactive description of stat2 -----------------------------
   output$description_text_stat2 <- renderUI({
+    
+    # selected_metric_title2 <- var_names[which(var_names$variable == input$stat2),] |>
+    #   pull(var = metric_title)
+    # 
+    # str <- paste0(
+    #   "<b>", selected_metric_title2, ":</b> ",
+    #   info_ds[which(info_ds$variable == input$stat2),] |>
+    #     pull(var = "description"),
+    #   "<br><b>Source: </b>", info_ds[which(info_ds$variable == input$fill_stat),] |>
+    #     pull(var = "source"),
+    #   " (", info_ds[which(info_ds$variable == input$fill_stat),] |>
+    #     pull(var = "years"), ")"
+    # )
+    
     str <- paste0(
-      "<b>", stat2_metric_title.react(), ":</b> ",
-      info_ds[which(info_ds$variable == input$stat2),] |> pull(var = "description"),
-      "<br><b>Source: </b>", info_ds[which(info_ds$variable == input$fill_stat),] |> pull(var = "source"),
-      " (", info_ds[which(info_ds$variable == input$fill_stat),] |> pull(var = "years"), ")"
+      "<b>", stat2_info()$metric_title, ":</b> ",
+      stat2_info()$description,
+      "<br><b>Source: </b>", 
+      stat2_info()$source,
+      " (", 
+      stat2_info()$years,
+      ")"
     )
     HTML(str)
   })
@@ -142,7 +195,7 @@ function(input, output, session) {
 
     # The map itself
     leaflet(options = leafletOptions(minZoom = 7, maxZoom = 10)) |>
-      addTiles() |>
+      # addTiles() |>
       setView(lng = -86, lat = 35.51, zoom = 8) |>
       # Teneessee Shape File
       addPolygons(data = m,
@@ -153,18 +206,27 @@ function(input, output, session) {
                   fillOpacity = 0.7,
                   fillColor = ~pal(fill_stat),
                   popup = ~paste0("<b>County</b>: ", county, "<br><b>",
-                                  fill_stat_metric_title.react(), "</b>: ", format_num_vec(fill_stat), "<br><b>",
-                                  stat2_metric_title.react(), "</b>: ", format_num_vec(stat2)
+                                  fill_stat_info()$metric_title, "</b>: ", 
+                                  format_num_vec(fill_stat), "<br><b>",
+                                  stat2_info()$metric_title, "</b>: ", 
+                                  format_num_vec(stat2)
                   )
       ) |>
-      addEasyButton(easyButton(
-        position = "topright",
-        icon = span(class = "p", HTML("<b>Compare Stats</b>")),
-        title = "Show Details / Compare Statistics",
-        id = "show-panel",
-        onClick = JS("function(btn, map) {Shiny.onInputChange('eb_show_panel', Math.random());}")
-      ))
+      addEasyButton(
+        easyButton(
+          position = "topright",
+          icon = span(class = "p", HTML("<b>Compare Stats</b>")),
+          title = "Show Details / Compare Statistics",
+          id = "show-panel",
+          onClick = JS("function(btn, map) {Shiny.onInputChange('eb_show_panel', Math.random());}")
+        )
+      )
   })
+  
+  # observeEvent(input$fill_stat, {
+  #   leafletProxy("map") |>
+  #     clearShapes()
+  # })
 
   # Selected leaflet zip handler -----------------------------------------------
   click_county <- reactiveVal()
@@ -204,6 +266,8 @@ function(input, output, session) {
 
   # Comparison plotly ----------------------------------------------------------
   output$plotly <- renderPlotly({
+    
+    plot_limits <- if_else(input$lims == TRUE, 0, as.numeric(NA))
 
     # Multiplies values by 100 if they're percentages (between 0 and 1)
     plotly_data <- map_data.react() |>
@@ -220,8 +284,8 @@ function(input, output, session) {
                      y = stat2,
                      group = 1,
                      text = paste0("County: ", county, "\n",
-                                   fill_stat_metric_title.react(), "</b>: ", format_num_vec(fill_stat), "<br><b>",
-                                   stat2_metric_title.react(), "</b>: ", format_num_vec(stat2)
+                                   fill_stat_info()$metric_title, "</b>: ", format_num_vec(fill_stat), "<br><b>",
+                                   stat2_info()$metric_title, "</b>: ", format_num_vec(stat2)
                      ))) +
       # The normal points
       geom_point() +
@@ -237,11 +301,13 @@ function(input, output, session) {
       # Trendline
       geom_smooth(aes(y = stat2.toggle), method = "lm", color = "red", se = F) +
       scale_x_continuous(labels = scales::comma,
-                         limits = c(lims.react(), NA)) +
+                         limits = c(plot_limits, NA)) +
       scale_y_continuous(labels = scales::comma,
-                         limits = c(lims.react(), NA)) +
-      labs(x = fill_stat_metric_title.react(),
-           y = stat2_metric_title.react()) +
+                         limits = c(plot_limits, NA)) +
+      labs(
+        x = fill_stat_info()$metric_title,
+        y = stat2_info()$metric_title
+      ) +
       theme_minimal()
 
     ggplotly(p1, tooltip = "text") |>
