@@ -1,10 +1,10 @@
-CATEGORY,METRIC TITLE,VAR,METRIC DESCRIPTION,AVERAGE TN COUNTY,AVERAGE TN COUNTY CLEAN,YEAR of DATA,SOURCE OF DATA,NOTES
+CATEGORY,METRIC TITLE,VARIABLE,DESCRIPTION,AVERAGE TN COUNTY,AVERAGE TN COUNTY CLEAN,YEARS,SOURCE,NOTES
 Children,Uninsured Children,uninsured_children,Percentage of children under age 19 without health insurance,4.9%,0.049,2021,"US Census Bureau, ACS 5-Yr Estimates",
 Children,Child Care Centers,child_care_per_1000_children_under_five,"Number of child care centers per 1,000 population under 5 years old.",9 for every 1k,0.009,2022,University of Wisconsin Population Health Institute - County Health Rankings,
 Children,Children in Single-Parent Households,one_parent_household,Percentage of children that live in a household headed by a single parent.,25.1%,0.251,2022,"US Census Bureau, ACS 5-Yr Estimates",
 Children,Children in Food-Insecure Households,child_food_insecurity,"the percent of children under age 18 living in households, where in the previous 12 months, there was an uncertainty of having, or an inability to acquire, enough food for all household members because of insufficient money or other resources. ",13.5%,0.135,2021,Feeding America - Map the Meal Gap,
 Children,Disconnected Youth,disconnected_youth,Percentage of teens and young adults ages 16-19 who are neither working nor in school.,8.7%,0.087,2022,"US Census Bureau, ACS 5-Yr Estimates",
-Children + Economy,Children in Poverty,poverty_rate_child,The share of persons under age 18 below the federal poverty level.,22.0%,0.22,2021,"US Census Bureau, ACS 5-Yr Estimates",
+Children/Economy,Children in Poverty,poverty_rate_child,The share of persons under age 18 below the federal poverty level.,22.0%,0.22,2021,"US Census Bureau, ACS 5-Yr Estimates",
 Children/Economy,Children Receiving Public Assistance,children_households_public_assistance,"The percent of children ages 18 and under in households with Supplemental Security Income (SSI), cash public assistance income, or Food Stamps/SNAP in the previous 12 months.",29.7%,0.297,2022,"US Census Bureau, ACS 5-Yr Estimates",
 Children/Economy,Households with Children Receiving Food Stamps,food_stamps_households_w_children,The percent of households with children under the age of 18 receiving food stamps.,23.9%,0.239,2022,"US Census Bureau, ACS 5-Yr Estimates",
 Children,Child Care Cost Burden,child_care_cost,Child care costs for a household with two children as a percent of median household income.,24.3%,0.243,2022,University of Wisconsin Population Health Institute - County Health Rankings,

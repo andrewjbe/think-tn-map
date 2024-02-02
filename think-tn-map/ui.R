@@ -7,11 +7,26 @@ library(shiny)
 library(bslib)
 library(shinyjs)
 library(readr)
+library(dplyr)
 library(here)
+library(leaflet)
+library(plotly)
+library(janitor)
+options(scipen=999,
+        readr.show_col_types = F)
 
 # Data -------------------------------------------------------------------------
 tn_county_list <- read_csv(here("think-tn-map", "data", "tn-counties-list.csv")) |>
   arrange(`County Name`)
+
+# TODO: placeholder, add groups
+choices_grouped <- read_csv(here("think-tn-map", "data", "data-info.csv")) |>
+  clean_names() |>
+  pull(var = variable)
+
+names(choices_grouped) <- read_csv(here("think-tn-map", "data", "data-info.csv")) |>
+  clean_names() |>
+  pull(var = metric_title)
 
 # UI code ----------------------------------------------------------------------
 ui <- fluidPage(
@@ -39,8 +54,7 @@ ui <- fluidPage(
       h3("Mapping Tools"),
       selectInput(inputId = "fill_stat",
                   label = "Fill Statistic",
-                  # choices = choices_grouped,
-                  choices = c(":D"),
+                  choices = choices_grouped,
                   selected = "uninsured",
                   multiple = FALSE,
                   selectize = TRUE),
@@ -54,19 +68,20 @@ ui <- fluidPage(
                   selected = "Tulsa",
                   multiple = FALSE,
                   selectize = TRUE),
-      # downloadButton(outputId = "pdf_download",
-      #                label = "Download"),
+      downloadButton(outputId = "pdf_download",
+                     label = "Download"),
       hr(),
-      div("This interactive tool allows you to visualize OK Policy's Child Well-being metrics on a map of Oklahoma's 77 counties.
-        You can also click the 'Compare Stats' button in the top right corner to select an additional variable for comparison. The
-        map is designed to display more negative outcomes (such as a high unemployment rate or a low median income) with darker colors.",
-        HTML("<br><br>"),
-        "This tool was developed as part of the Oklahoma Policy Institute's KIDS COUNT research. For more information about OK Policy's KIDS COUNT work, visit its",
-        a("KIDS COUNT website", href = "https://okpolicy.org/topic/kids-count/"),
-        "All questions, suggestions, and feedback for this tool may be addressed to our research team using the following email address:",
-        HTML("<a href='abell@okpolicy.org' target='_blank'>abell@okpolicy.org</a>"),
-        style = "font-size:14px;" # <- this font size is only for the paragraph at the bottom, not the whole sidebar
-      )),
+      # div("This interactive tool allows you to visualize OK Policy's Child Well-being metrics on a map of Oklahoma's 77 counties.
+      #   You can also click the 'Compare Stats' button in the top right corner to select an additional variable for comparison. The
+      #   map is designed to display more negative outcomes (such as a high unemployment rate or a low median income) with darker colors.",
+      #   HTML("<br><br>"),
+      #   "This tool was developed as part of the Oklahoma Policy Institute's KIDS COUNT research. For more information about OK Policy's KIDS COUNT work, visit its",
+      #   a("KIDS COUNT website", href = "https://okpolicy.org/topic/kids-count/"),
+      #   "All questions, suggestions, and feedback for this tool may be addressed to our research team using the following email address:",
+      #   HTML("<a href='abell@okpolicy.org' target='_blank'>abell@okpolicy.org</a>"),
+      #   style = "font-size:14px;" # <- this font size is only for the paragraph at the bottom, not the whole sidebar
+      # )
+      ),
     
     # Main panel ---------------------------------------------------------------
     mainPanel(
@@ -74,10 +89,10 @@ ui <- fluidPage(
       # Leaflet output ---------------------------------------------------------
       tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"), # This makes the map fill up the page vertically
       tags$style(type = "text/css", "#show-panel {height: 30px; width: 100px;"), # This makes the "compare stats" easybutton bigger
-      # leafletOutput('map'),
+      leafletOutput('map'),
       # Absolute / compare stats panel -----------------------------------------
       tags$style("#plotly_panel {background-color: #FFFFFF; opacity: 0.9;}"), # Sets background color / alpha of absolute panel
-      hidden(
+      # hidden(
         absolutePanel(
           id = "plotly_panel",
           class = "panel panel-default",
@@ -88,14 +103,13 @@ ui <- fluidPage(
           right = 30,
           bottom = "auto",
           width = 400,
-          # height = 650,
-          # plotlyOutput('plotly'),
+          height = 650,
+          plotlyOutput('plotly'),
           wellPanel(
             # Comparison statistic
             selectInput(inputId = "stat2",
                         label = "Comparison Statistic",
-                        # choices = choices_grouped,
-                        choices = c(":D"),
+                        choices = choices_grouped,
                         selected = "child_poverty_pct",
                         multiple = FALSE,
                         selectize = TRUE),
@@ -110,7 +124,7 @@ ui <- fluidPage(
                                  label = "Set X and Y axis to begin at zero")
           ),
         )
-      )
+      # )
     )
   )
 )
