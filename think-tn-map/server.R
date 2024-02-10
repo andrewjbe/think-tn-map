@@ -39,11 +39,13 @@ format_num_vec <- base::Vectorize(format_num)
 
 # Data =========================================================================
 # Main dataset with all metrics ------------------------------------------------
-main_ds <- here("think-tn-map", "data", "data-clean.csv") |>
+# main_ds <- here("think-tn-map", "data", "data-clean.csv") |>
+main_ds <- here("data", "data-clean.csv") |>
   read_csv()
 
 # Dataset with info / details on all metrics -----------------------------------
-info_ds <- here("think-tn-map", "data", "data-info.csv") |>
+# info_ds <- here("think-tn-map", "data", "data-info.csv") |>
+info_ds <- here("data", "data-info.csv") |>
   read_csv() |>
   clean_names()
 
@@ -58,7 +60,8 @@ var_names <- info_ds |>
   select(variable, metric_title)
 
 # County shapefile -------------------------------------------------------------
-county_shape <- read_rds(here("think-tn-map", "data", "tn-counties.rds")) |>
+# county_shape <- read_rds(here("think-tn-map", "data", "tn-counties.rds")) |>
+county_shape <- read_rds(here("data", "tn-counties.rds")) |>
   clean_names() |>
   rename(county = name)
   
@@ -103,35 +106,9 @@ function(input, output, session) {
       filter(variable == input$stat2)
     
   })
-
-  # Reactive variable w/ selected nice names -----------------------------------
-  # fill_stat_metric_title.react <- reactive({
-  #   var_names[which(var_names$variable == input$fill_stat),] |>
-  #     pull(var = metric_title)
-  # })
-
-  # stat2_metric_title.react <- reactive({
-  #   var_names[which(var_names$variable == input$stat2),] |>
-  #     pull(var = metric_title)
-  # })
   
   # Nicely formatted reactive description of fill stat -------------------------
   output$description_text_fill <- renderUI({
-    
-    # selected_metric_title <- var_names[which(var_names$variable == input$fill_stat),] |>
-    #   pull(var = metric_title)
-    # 
-    # str <- paste0(
-    #   "<b>", selected_metric_title, ":</b> ",
-    #   info_ds[which(info_ds$variable == input$fill_stat),] |> 
-    #     pull(var = "description"),
-    #   "<br><b>Source: </b>", 
-    #   info_ds[which(info_ds$variable == input$fill_stat),] |> 
-    #     pull(var = "source"),
-    #   " (", info_ds[which(info_ds$variable == input$fill_stat),] |> 
-    #     pull(var = "years"), ")"
-    # )
-    
     str <- paste0(
       "<b>", fill_stat_info()$metric_title, ":</b> ",
       fill_stat_info()$description,
@@ -147,20 +124,6 @@ function(input, output, session) {
 
   # Nicely formatted reactive description of stat2 -----------------------------
   output$description_text_stat2 <- renderUI({
-    
-    # selected_metric_title2 <- var_names[which(var_names$variable == input$stat2),] |>
-    #   pull(var = metric_title)
-    # 
-    # str <- paste0(
-    #   "<b>", selected_metric_title2, ":</b> ",
-    #   info_ds[which(info_ds$variable == input$stat2),] |>
-    #     pull(var = "description"),
-    #   "<br><b>Source: </b>", info_ds[which(info_ds$variable == input$fill_stat),] |>
-    #     pull(var = "source"),
-    #   " (", info_ds[which(info_ds$variable == input$fill_stat),] |>
-    #     pull(var = "years"), ")"
-    # )
-    
     str <- paste0(
       "<b>", stat2_info()$metric_title, ":</b> ",
       stat2_info()$description,
@@ -242,28 +205,6 @@ function(input, output, session) {
     toggle('plotly_panel')
   })
 
-  # # DT Datatable ---------------------------------------------------------------
-  # output$table <- renderDataTable({
-  #   d <- map_data.react() |>
-  #     mutate(
-  #       fill_stat = format_num_vec(fill_stat),
-  #       stat2 = format_num_vec(stat2),
-  #     ) |>
-  #     select(county, fill_stat, stat2) #, total_pop)
-  # 
-  #   DT::datatable(
-  #     data = d,
-  #     rownames = F,
-  #     options = list(pageLength = 5),
-  #     colnames = c(
-  #       "County",
-  #       fill_stat_metric_title.react(),
-  #       stat2_metric_title.react()
-  #     )
-  #   )
-  # 
-  # })
-
   # Comparison plotly ----------------------------------------------------------
   output$plotly <- renderPlotly({
     
@@ -283,7 +224,7 @@ function(input, output, session) {
                  aes(x = fill_stat,
                      y = stat2,
                      group = 1,
-                     text = paste0("County: ", county, "\n",
+                     text = paste0("County: ", county, "\n<b>",
                                    fill_stat_info()$metric_title, "</b>: ", format_num_vec(fill_stat), "<br><b>",
                                    stat2_info()$metric_title, "</b>: ", format_num_vec(stat2)
                      ))) +

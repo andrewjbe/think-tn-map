@@ -16,15 +16,15 @@ options(scipen=999,
         readr.show_col_types = F)
 
 # Data -------------------------------------------------------------------------
-tn_county_list <- read_csv(here("think-tn-map", "data", "tn-counties-list.csv")) |>
+tn_county_list <- read_csv(here("data", "tn-counties-list.csv")) |>
   arrange(`County Name`)
 
 # TODO: placeholder, add groups
-choices_grouped <- read_csv(here("think-tn-map", "data", "data-info.csv")) |>
+choices_grouped <- read_csv(here("data", "data-info.csv")) |>
   clean_names() |>
   pull(var = variable)
 
-names(choices_grouped) <- read_csv(here("think-tn-map", "data", "data-info.csv")) |>
+names(choices_grouped) <- read_csv(here("data", "data-info.csv")) |>
   clean_names() |>
   pull(var = metric_title)
 
@@ -41,9 +41,9 @@ ui <- fluidPage(
     tags$a(img(src = "think-tn-logo.png",
                heigh = "3%", width = "8%"),
            href = "https://www.thinktennessee.org/"),
-    a("Think Tennessee Data Map", href = "https://www.thinktennessee.org/")
+    a("Think Tennessee Data Map [DRAFT / NOT FOR PUBLICATION]", href = "https://www.thinktennessee.org/")
   ),
-  windowTitle = "Think Tennessee Data Map"),
+  windowTitle = "[DRAFT] Think Tennessee Data Map"),
   
   # Input sidebar --------------------------------------------------------------
   sidebarLayout(
