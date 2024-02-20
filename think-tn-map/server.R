@@ -76,7 +76,9 @@ function(input, output, session) {
     z <- main_ds |>
       select(county,
              fill_stat = input$fill_stat,
-             stat2 = input$stat2
+             fill_stat_rank = paste0(input$fill_stat, "_rank"),
+             stat2 = input$stat2,
+             stat2_rank = paste0(input$stat2, "_rank")
       ) |>
       mutate(fill_stat.toggle = as.numeric(NA),
              stat2.toggle = as.numeric(NA)) |>
@@ -147,7 +149,7 @@ function(input, output, session) {
     pal <- colorBin(
       # palette = info_ds[which(info_ds$variable == input$fill_stat),] |>
       #   pull(var = "color_scheme"),
-      palette = "Greens",
+      palette = "RdYlGn",
       # reverse = if_else(info_ds[which(info_ds$variable == input$fill_stat),] |>
       #                     pull(var = "good_outcomes") == "low", FALSE, TRUE),
       domain = map_data.react()$fill_stat,
@@ -170,9 +172,12 @@ function(input, output, session) {
                   fillColor = ~pal(fill_stat),
                   popup = ~paste0("<b>County</b>: ", county, "<br><b>",
                                   fill_stat_info()$metric_title, "</b>: ", 
-                                  format_num_vec(fill_stat), "<br><b>",
-                                  stat2_info()$metric_title, "</b>: ", 
-                                  format_num_vec(stat2)
+                                  format_num_vec(fill_stat), 
+                                  " (#", fill_stat_rank, ")",
+                                  "<br><b>",
+                                  stat2_info()$metric_title, "</b>: ",
+                                  format_num_vec(stat2),
+                                  " (#", stat2_rank, ")"
                   )
       ) |>
       addEasyButton(

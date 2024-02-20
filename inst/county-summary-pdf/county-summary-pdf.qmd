@@ -4,7 +4,7 @@ subtitle: "`r params$county` County Fact Sheet"
 format:
   ojo-report-template-html: default
 # Formatting options -----------------------------------------------------------
-logo: "www/thinktennessee-logo.png" # Other options are in the /www/ directory
+logo: "www/thinktennessee-logo-white.png" # Other options are in the /www/ directory
 number-sections: true
 smooth-scroll: true
 title-block-banner: "#1a884a" # The background color for the header banner
@@ -19,7 +19,7 @@ knitr:
     warning: false
     message: false
 params:
-  county: "Sevier"
+  county: "Shelby"
 # Remember that there are other formatting options in /_extensions/ojo-report-template/custom.scss
 # You can also edit the header structure in /_extensions/ojo-report-template/title-block.html
 # Document info ----------------------------------------------------------------
@@ -362,7 +362,7 @@ main_ds |>
     value_fmt = format_metric(value_clean, format),
     rank_fmt = if_else(!is.na(rank), paste0("#", rank), ""),
     county_avg_diff_fmt = format_metric(county_avg_diff, format, diff = TRUE),
-    county_avg_diff_color = if_else(county_avg_diff < 0, "red", "green")
+    county_avg_diff_color = if_else(county_avg_diff < 0, "red", "green") # TODO This is where you edit if they want to make the red and green correspond conceptually not just numerically 
   ) |> 
   select(c(metric_title, value_fmt, rank_fmt, category,
            average_tn_county, county_avg_diff_color, county_avg_diff_fmt, description, source)) |>
@@ -402,14 +402,14 @@ main_ds |>
     )
   ) |>
   # Row groups  ----------------------------------------------------------------
-  tab_row_group(
-    label = md("**Child Wellbeing**"),
-    rows = category == "Children"
-  ) |>
-  tab_row_group(
-    label = md("**Economy**"),
-    rows = category == "Economy"
-  ) |>
+  # tab_row_group(
+  #   label = md("### **Child Wellbeing**"),
+  #   rows = category == "Children"
+  # ) |>
+  # tab_row_group(
+  #   label = md("### **Economy**"),
+  #   rows = category == "Economy"
+  # ) |>
   # Options  -------------------------------------------------------------------
   opt_vertical_padding(scale = 0.3) |>
   opt_stylize(style = 6,
