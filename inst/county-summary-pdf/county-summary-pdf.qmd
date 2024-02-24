@@ -46,6 +46,7 @@ library(ggthemes)
 library(sf)
 library(gt)
 library(janitor)
+library(here)
 
 options(scipen=999)
 
@@ -378,8 +379,9 @@ main_ds |>
   data_color(
     columns = county_avg_diff_color,
     target_columns = county_avg_diff_fmt,
-    palette = c("green", "red"),
-    alpha = 0.5
+    palette = c("#1a884a", "#C30211"),
+    alpha = 1,
+    apply_to = "text"
   ) |>
   # Labels ---------------------------------------------------------------------
   cols_label(
