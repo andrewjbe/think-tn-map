@@ -11,6 +11,7 @@ library(dplyr)
 library(here)
 library(janitor)
 library(leaflet)
+library(shinyjs)
 library(sf)
 library(plotly)
 library(htmltools)
@@ -39,23 +40,15 @@ format_num_vec <- base::Vectorize(format_num)
 
 # Data =========================================================================
 # Main dataset with all metrics ------------------------------------------------
-# main_ds <- here("think-tn-map", "data", "data-clean.csv") |>
 main_ds <- here("data", "data-clean.csv") |>
   read_csv()
 
 # Dataset with info / details on all metrics -----------------------------------
-# info_ds <- here("think-tn-map", "data", "data-info.csv") |>
 info_ds <- here("data", "data-info.csv") |>
   read_csv() |>
   clean_names()
 
 # Variable names 
-# var_names <- main_ds |>
-#   select(!c(county)) |>
-#   names() |>
-#   as_tibble() |>
-#   rename(variable = value) |>
-#   left_join(info_ds |> select(variable, metric_title), by = "variable")
 var_names <- info_ds |> 
   select(variable, metric_title)
 
@@ -68,49 +61,76 @@ county_shape <- read_rds(here("data", "tn-counties.rds")) |>
 # Server logic =================================================================
 function(input, output, session) {
   
-  reactlog_enable()
-
+  # reactlog_enable()
+  
   # Reactive variables / dataframes ============================================
   # Mapping Data reactive dataframe --------------------------------------------
   map_data.react <- reactive({
-    z <- main_ds |>
-      select(county,
-             fill_stat = input$fill_stat,
-             fill_stat_rank = paste0(input$fill_stat, "_rank"),
-             stat2 = input$stat2,
-             stat2_rank = paste0(input$stat2, "_rank")
-      ) |>
-      mutate(fill_stat.toggle = as.numeric(NA),
-             stat2.toggle = as.numeric(NA)) |>
-      filter(county %in% county_shape$county)
 
-    if(input$toggle){
-      z <- z |>
+    # If you're using a stat2...
+    if(input$add_stat2){
+      z <- main_ds |>
+        select(county,
+               fill_stat = input$fill_stat,
+               fill_stat_rank = paste0(input$fill_stat, "_rank"),
+               stat2 = input$stat2,
+               stat2_rank = paste0(input$stat2, "_rank")
+        ) |>
         mutate(
-          fill_stat.toggle = as.numeric(fill_stat),
-          stat2.toggle = as.numeric(stat2)
-        )
+          fill_stat.toggle = as.numeric(NA),
+          stat2.toggle = as.numeric(NA)
+        ) |>
+        filter(county %in% county_shape$county)
+      
+      if(input$toggle){
+        z <- z |>
+          mutate(
+            fill_stat.toggle = as.numeric(fill_stat),
+            stat2.toggle = as.numeric(stat2)
+          )
+      }
+      
+    # If you're not (default)...
+    } else {
+      z <- main_ds |>
+        select(county,
+               fill_stat = input$fill_stat,
+               fill_stat_rank = paste0(input$fill_stat, "_rank"),
+        ) |>
+        mutate(
+          fill_stat.toggle = as.numeric(NA),
+        ) |>
+        filter(county %in% county_shape$county)
+      
+      if(input$toggle){
+        z <- z |>
+          mutate(
+            fill_stat.toggle = as.numeric(fill_stat)
+          )
+      }
     }
+    
     return(z)
+    
   })
   
   # Reactive values with currently selected fill stat info ---------------------
   fill_stat_info <- reactive({
-    
     info_ds |>
       filter(variable == input$fill_stat)
-    
   })
   
   stat2_info <- reactive({
-    
     info_ds |>
       filter(variable == input$stat2)
-    
   })
   
   # Nicely formatted reactive description of fill stat -------------------------
   output$description_text_fill <- renderUI({
+    
+    validate(need(input$fill_stat, message = F), 
+             need(input$fill_stat_cat, message = F))
+    
     str <- paste0(
       "<b>", fill_stat_info()$metric_title, ":</b> ",
       fill_stat_info()$description,
@@ -126,6 +146,10 @@ function(input, output, session) {
 
   # Nicely formatted reactive description of stat2 -----------------------------
   output$description_text_stat2 <- renderUI({
+    
+    validate(need(input$stat2, message = F), 
+             need(input$stat2_cat, message = F))
+    
     str <- paste0(
       "<b>", stat2_info()$metric_title, ":</b> ",
       stat2_info()$description,
@@ -138,6 +162,57 @@ function(input, output, session) {
     HTML(str)
   })
 
+  # UI elements ================================================================
+  # Metric ---------------------------------------------------------------------
+  output$fill_stat_ui <- renderUI({
+    choices_grouped <- info_ds |>
+      filter(category == input$fill_stat_cat) |>
+      pull(var = variable)
+    
+    names(choices_grouped) <- info_ds |>
+      filter(category == input$fill_stat_cat) |>
+      pull(var = metric_title)
+    
+    selectInput(inputId = "fill_stat",
+                label = "Map Metric:",
+                choices = choices_grouped,
+                selected = "child_food_insecurity",
+                multiple = FALSE,
+                selectize = TRUE)
+  })
+  
+
+  # stat2 metric ---------------------------------------------------------------
+  output$stat2_ui <- renderUI({
+    choices_grouped_2 <- info_ds |>
+      filter(category == input$stat2_cat) |>
+      pull(var = variable)
+    
+    names(choices_grouped_2) <- info_ds |>
+      filter(category == input$stat2_cat) |>
+      pull(var = metric_title)
+    
+    disabled(
+    selectInput(inputId = "stat2",
+                label = "Comparison Metric",
+                choices = choices_grouped_2,
+                selected = "poverty_rate_child",
+                multiple = FALSE,
+                selectize = TRUE)
+    )
+    
+  })
+  
+  observe({
+    if(input$add_stat2){
+      shinyjs::enable("stat2")
+      shinyjs::enable("stat2_cat")
+    } else {
+      shinyjs::disable("stat2")
+      shinyjs::disable("stat2_cat")
+    }
+  })
+  
   # Leaflet Map ================================================================
   output$map <- renderLeaflet({
 
@@ -157,12 +232,42 @@ function(input, output, session) {
       bins = 6,
       pretty = TRUE
     )
+    
+    # The map popups
+    generate_popup <- function(county, fill_stat = NA, stat2 = NA, fill_stat_rank = NA, stat2_rank = NA,
+                               include_stat2 = FALSE) {
+
+      if(include_stat2) {
+        paste0("<b>County</b>: ", county, "<br><b>",
+               fill_stat_info()$metric_title, "</b>: ", 
+               format_num_vec(fill_stat), 
+               " (#", fill_stat_rank, ")<br>",
+               "<b>Avg. TN county:</b> ", fill_stat_info()$average_tn_county, 
+               "<hr><b>",
+               stat2_info()$metric_title, "</b>: ",
+               format_num_vec(stat2),
+               " (#", stat2_rank, ")<br>",
+               "<b>Avg. TN county:</b> ", stat2_info()$average_tn_county
+        )
+      } else {
+        paste0("<b>County</b>: ", county, "<br><b>",
+               fill_stat_info()$metric_title, "</b>: ",
+               format_num_vec(fill_stat),
+               " (#", fill_stat_rank, ")<br>",
+               "<b>Avg. TN county:</b> ", fill_stat_info()$average_tn_county
+        )
+      }
+
+    }
 
     # The map itself
-    leaflet(options = leafletOptions(minZoom = 7, maxZoom = 10)) |>
+    leaflet(options = leafletOptions(zoomControl = FALSE,
+                                     zoomSnap = 0.1,
+                                     zoomDelta = 0.1,
+                                     minZoom = 7, 
+                                     maxZoom = 10)) |>
       # addTiles() |>
-      setView(lng = -86, lat = 35.51, zoom = 8) |>
-      # Teneessee Shape File
+      setView(lng = -86, lat = 35.51, zoom = 7.8) |>
       addPolygons(data = m,
                   layerId = ~paste0(county),
                   label = ~county,
@@ -170,35 +275,38 @@ function(input, output, session) {
                   smoothFactor = 0.8,
                   fillOpacity = 0.7,
                   fillColor = ~pal(fill_stat),
-                  popup = ~paste0("<b>County</b>: ", county, "<br><b>",
-                                  fill_stat_info()$metric_title, "</b>: ", 
-                                  format_num_vec(fill_stat), 
-                                  " (#", fill_stat_rank, ")",
-                                  "<br><b>",
-                                  stat2_info()$metric_title, "</b>: ",
-                                  format_num_vec(stat2),
-                                  " (#", stat2_rank, ")"
-                  )
+                  popup = ~generate_popup(county = county,
+                                          fill_stat = fill_stat,
+                                          stat2 = stat2,
+                                          fill_stat_rank = fill_stat_rank,
+                                          stat2_rank = stat2_rank,
+                                          include_stat2 = input$add_stat2)
       ) |>
       addEasyButton(
         easyButton(
           position = "topright",
           icon = span(class = "p", HTML("<b>Compare Stats</b>")),
-          title = "Show Details / Compare Statistics",
           id = "show-panel",
           onClick = JS("function(btn, map) {Shiny.onInputChange('eb_show_panel', Math.random());}")
         )
+      ) |>
+      onRender(
+        "function(el, x) {
+          L.control.zoom({position:'bottomleft'}).addTo(this);
+        }") |>
+      addControl(
+        h2(paste0(
+          fill_stat_info()$metric_title
+        )),
+        position = "topleft"
       )
+    
   })
   
-  # observeEvent(input$fill_stat, {
-  #   leafletProxy("map") |>
-  #     clearShapes()
-  # })
 
   # Selected leaflet zip handler -----------------------------------------------
   click_county <- reactiveVal()
-  click_county("Oklahoma")
+  click_county("Shelby")
 
   observeEvent(input$map_shape_click, {
     # Capture the county name of the clicked polygon
@@ -213,21 +321,18 @@ function(input, output, session) {
   # Comparison plotly ----------------------------------------------------------
   output$plotly <- renderPlotly({
     
+    validate(need(input$add_stat2 == TRUE,
+             message = F)
+             )
+    
     plot_limits <- if_else(input$lims == TRUE, 0, as.numeric(NA))
 
-    # Multiplies values by 100 if they're percentages (between 0 and 1)
-    plotly_data <- map_data.react() |>
-      mutate(
-        fill_stat = if_else(fill_stat > 0 & fill_stat < 1, fill_stat * 100, fill_stat),
-        stat2 = if_else(stat2 > 0 & stat2 < 1, stat2 * 100, stat2),
-        fill_stat.toggle = if_else(fill_stat.toggle > 0 & fill_stat.toggle < 1, fill_stat.toggle * 100, fill_stat.toggle),
-        stat2.toggle = if_else(stat2.toggle > 0 & stat2.toggle < 1, stat2.toggle * 100, stat2.toggle)
-      )
+    plotly_data <- map_data.react()
 
     # The ggplot
     p1 <- ggplot(plotly_data,
-                 aes(x = fill_stat,
-                     y = stat2,
+                 aes(x = stat2,
+                     y = fill_stat,
                      group = 1,
                      text = paste0("County: ", county, "\n<b>",
                                    fill_stat_info()$metric_title, "</b>: ", format_num_vec(fill_stat), "<br><b>",
@@ -237,10 +342,6 @@ function(input, output, session) {
       geom_point() +
       # The highlighted red point
       geom_point(data = plotly_data |>
-                   mutate(
-                     fill_stat = if_else(fill_stat > 0 & fill_stat < 1, fill_stat * 100, fill_stat),
-                     stat2 = if_else(stat2 > 0 & stat2 < 1, stat2 * 100, stat2)
-                   ) |>
                    filter(county == click_county()),
                  size = 3,
                  color = "red") +
@@ -251,8 +352,8 @@ function(input, output, session) {
       scale_y_continuous(labels = scales::comma,
                          limits = c(plot_limits, NA)) +
       labs(
-        x = fill_stat_info()$metric_title,
-        y = stat2_info()$metric_title
+        x = stat2_info()$metric_title,
+        y = fill_stat_info()$metric_title
       ) +
       theme_minimal()
 
@@ -262,12 +363,35 @@ function(input, output, session) {
   })
 
   # PDF download handler -- gets from www file
-  output$pdf_download <- downloadHandler(
+  output$pdf_download_all_counties <- downloadHandler(
     filename = function() {
-      paste("county-report-", tolower(input$pdf_select), ".pdf", sep = "")
+      paste("Think TN Data Map single metric report - ", tolower(fill_stat_info()$metric_title), ".pdf", sep = "")
     },
     content = function(file) {
-      file.copy(paste0("www/pdfs/kids-count-factsheet-", tolower(input$pdf_select), "-county.pdf"), file)
+      # print(paste0("docs/one-metric-all-counties/one-metric-all-counties-", fill_stat_info()$metric_title, ".pdf"))
+      file.copy(paste0("docs/one-metric-all-counties/one-metric-all-counties-", 
+                       fill_stat_info()$metric_title, ".pdf"),
+                file)
+    }
+  )
+  
+  output$pdf_download_county_summary <- downloadHandler(
+    filename = function() {
+      paste("Think TN Data Map ", input$pdf_select_county, " County Summary.pdf", sep = "")
+    },
+    content = function(file) {
+      file.copy(paste0("docs/county-summary/county-summary-", 
+                       input$pdf_select_county, ".pdf"), file)
+    }
+  )
+  
+  output$pdf_download_all_metrics <- downloadHandler(
+    filename = function() {
+      paste("Think TN Data Map all metrics report - ", input$pdf_select_county, " County.pdf", sep = "")
+    },
+    content = function(file) {
+      file.copy(paste0("docs/one-county-all-metrics/one-county-all-metrics-", 
+                       input$pdf_select_county, ".pdf"), file)
     }
   )
 

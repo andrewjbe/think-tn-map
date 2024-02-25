@@ -12,6 +12,7 @@ library(here)
 library(leaflet)
 library(plotly)
 library(janitor)
+library(shinycssloaders)
 options(scipen=999,
         readr.show_col_types = F)
 
@@ -19,14 +20,13 @@ options(scipen=999,
 tn_county_list <- read_csv(here("data", "tn-counties-list.csv")) |>
   arrange(`County Name`)
 
-# TODO: placeholder, add groups
-choices_grouped <- read_csv(here("data", "data-info.csv")) |>
-  clean_names() |>
-  pull(var = variable)
+info_ds <- here("data", "data-info.csv") |>
+  read_csv() |>
+  clean_names()
 
-names(choices_grouped) <- read_csv(here("data", "data-info.csv")) |>
-  clean_names() |>
-  pull(var = metric_title)
+categories <- info_ds |>
+  distinct(category) |>
+  pull(var = category)
 
 # UI code ----------------------------------------------------------------------
 ui <- fluidPage(
@@ -39,38 +39,58 @@ ui <- fluidPage(
   # Application title ----------------------------------------------------------
   titlePanel(div(
     tags$a(img(src = "think-tn-logo.png",
-               heigh = "3%", width = "8%"),
+               height = "3%", width = "8%"),
            href = "https://www.thinktennessee.org/"),
     a("Think Tennessee Data Map [DRAFT / NOT FOR PUBLICATION]", href = "https://www.thinktennessee.org/")
   ),
   windowTitle = "[DRAFT] Think Tennessee Data Map"),
+  
+  tags$head(tags$link(rel="shortcut icon", href="favicon.png")),
   
   # Input sidebar --------------------------------------------------------------
   sidebarLayout(
     sidebarPanel(
       width = 3,
       # Choose first statistic (map fill)
-      tags$style(type = "text/css", "h3{padding: 0px; margin: 0px; padding-bottom: 5px;}"), # This just customizes the padding around h3()
+      tags$style(
+        type = "text/css", 
+        "h3 {
+          padding: 0px; margin: 0px; padding-bottom: 5px;
+        }"
+        ),
       h3("Mapping Tools"),
-      selectInput(inputId = "fill_stat",
-                  label = "Fill Statistic",
-                  choices = choices_grouped,
-                  selected = "uninsured_adults",
+      p("Select a category and a metric below to see it displayed on the county map."),
+      selectInput(inputId = "fill_stat_cat",
+                  label = "Metric Category:",
+                  choices = categories,
+                  selected = "Children",
                   multiple = FALSE,
                   selectize = TRUE),
+      uiOutput("fill_stat_ui"),
       htmlOutput('description_text_fill'),
+      # Metri reports
+      br(),
+      p("The PDF report below provides an overview of the selected metric across all counties."),
+      downloadButton(outputId = "pdf_download_all_counties",
+                     label = "All Counties Summary"),
       hr(),
-      h3("County Summaries"),
-      p("Download a PDF report detailing all child well-being metrics for a specific county below."),
-      selectInput(inputId = "pdf_select",
+      # County reports
+      h4("County Summaries"),
+      p("The first PDF report below provides an overview of the selected county. 
+        The second lists all metrics for the selected county."),
+      selectInput(inputId = "pdf_select_county",
                   label = "Selected County",
-                  choices = tn_county_list,
-                  selected = "Tulsa",
+                  # choices = tn_county_list, # for DEMO!!!
+                  choices = "Shelby",
+                  selected = "Shelby",
                   multiple = FALSE,
                   selectize = TRUE),
-      downloadButton(outputId = "pdf_download",
-                     label = "Download"),
-      hr(),
+      downloadButton(outputId = "pdf_download_county_summary",
+                     label = "County Overview"),
+      downloadButton(outputId = "pdf_download_all_metrics",
+                     label = "All Metrics"),
+
+      # hr(),
       # div("This interactive tool allows you to visualize OK Policy's Child Well-being metrics on a map of Oklahoma's 77 counties.
       #   You can also click the 'Compare Stats' button in the top right corner to select an additional variable for comparison. The
       #   map is designed to display more negative outcomes (such as a high unemployment rate or a low median income) with darker colors.",
@@ -89,7 +109,9 @@ ui <- fluidPage(
       # Leaflet output ---------------------------------------------------------
       tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"), # This makes the map fill up the page vertically
       tags$style(type = "text/css", "#show-panel {height: 30px; width: 100px;"), # This makes the "compare stats" easybutton bigger
-      leafletOutput('map'),
+      withSpinner(
+        leafletOutput('map')
+      ),
       # Absolute / compare stats panel -----------------------------------------
       tags$style("#plotly_panel {background-color: #FFFFFF; opacity: 0.9;}"), # Sets background color / alpha of absolute panel
       hidden(
@@ -98,21 +120,25 @@ ui <- fluidPage(
           class = "panel panel-default",
           fixed = TRUE,
           draggable = FALSE,
-          top = 120,
+          top = "11%",
           left = "auto",
           right = 30,
           bottom = "auto",
           width = 400,
           # height = 700,
-          plotlyOutput('plotly'),
           wellPanel(
+            plotlyOutput('plotly'),
+            checkboxInput(inputId = "add_stat2",
+                          label = "Add comparison metric?",
+                          value = FALSE),
             # Comparison statistic
-            selectInput(inputId = "stat2",
-                        label = "Comparison Statistic",
-                        choices = choices_grouped,
-                        selected = "poverty_rate_all",
+            selectInput(inputId = "stat2_cat",
+                        label = "Comparison Metric Category:",
+                        choices = categories,
+                        selected = "Economy",
                         multiple = FALSE,
                         selectize = TRUE),
+            uiOutput("stat2_ui"),
             # Stat2 nice description
             htmlOutput('description_text_stat2'),
             hr(),
@@ -122,7 +148,7 @@ ui <- fluidPage(
             # set axes to begin at 0 toggle
             shiny::checkboxInput(inputId = "lims",
                                  label = "Set X and Y axis to begin at zero")
-          ),
+          )
         )
       )
     )
