@@ -76,19 +76,7 @@ function(input, output, session) {
                stat2 = input$stat2,
                stat2_rank = paste0(input$stat2, "_rank")
         ) |>
-        mutate(
-          fill_stat.toggle = as.numeric(NA),
-          stat2.toggle = as.numeric(NA)
-        ) |>
         filter(county %in% county_shape$county)
-      
-      if(input$toggle){
-        z <- z |>
-          mutate(
-            fill_stat.toggle = as.numeric(fill_stat),
-            stat2.toggle = as.numeric(stat2)
-          )
-      }
       
     # If you're not (default)...
     } else {
@@ -97,17 +85,7 @@ function(input, output, session) {
                fill_stat = input$fill_stat,
                fill_stat_rank = paste0(input$fill_stat, "_rank"),
         ) |>
-        mutate(
-          fill_stat.toggle = as.numeric(NA),
-        ) |>
         filter(county %in% county_shape$county)
-      
-      if(input$toggle){
-        z <- z |>
-          mutate(
-            fill_stat.toggle = as.numeric(fill_stat)
-          )
-      }
     }
     
     return(z)
@@ -299,6 +277,18 @@ function(input, output, session) {
           fill_stat_info()$metric_title
         )),
         position = "topleft"
+      ) |>
+      addControl(
+        HTML(paste0(
+          "<b>", fill_stat_info()$metric_title, ": </b>",
+          fill_stat_info()$description, "<br>",
+          "<b>Source: </b>",
+          fill_stat_info()$source,
+          " (", 
+          fill_stat_info()$years, 
+          ")"
+          )),
+        position = "topleft"
       )
     
   })
@@ -322,7 +312,9 @@ function(input, output, session) {
   output$plotly <- renderPlotly({
     
     validate(need(input$add_stat2 == TRUE,
-             message = F)
+             message = F),
+             need(input$fill_stat, message = F),
+             need(input$stat2, message = F)
              )
     
     plot_limits <- if_else(input$lims == TRUE, 0, as.numeric(NA))
@@ -345,8 +337,6 @@ function(input, output, session) {
                    filter(county == click_county()),
                  size = 3,
                  color = "red") +
-      # Trendline
-      geom_smooth(aes(y = stat2.toggle), method = "lm", color = "red", se = F) +
       scale_x_continuous(labels = scales::comma,
                          limits = c(plot_limits, NA)) +
       scale_y_continuous(labels = scales::comma,
@@ -356,12 +346,19 @@ function(input, output, session) {
         y = fill_stat_info()$metric_title
       ) +
       theme_minimal()
+    
+    if(input$toggle) {
+      # Trendline
+      p1 <- p1 + 
+        geom_smooth(method = "lm", color = "red", se = F)
+    }
 
     ggplotly(p1, tooltip = "text") |>
       layout(xaxis = list(fixedrange = TRUE),
              yaxis = list(fixedrange = TRUE))
   })
 
+  # Download handlers ==========================================================
   # PDF download handler -- gets from www file
   output$pdf_download_all_counties <- downloadHandler(
     filename = function() {

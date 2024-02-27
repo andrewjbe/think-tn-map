@@ -61,15 +61,14 @@ ui <- fluidPage(
       h3("Mapping Tools"),
       p("Select a category and a metric below to see it displayed on the county map."),
       selectInput(inputId = "fill_stat_cat",
-                  label = "Metric Category:",
+                  label = "Map Metric Category:",
                   choices = categories,
                   selected = "Children",
                   multiple = FALSE,
                   selectize = TRUE),
       uiOutput("fill_stat_ui"),
-      htmlOutput('description_text_fill'),
-      # Metri reports
-      br(),
+      # htmlOutput('description_text_fill'),
+      # Metric reports
       p("The PDF report below provides an overview of the selected metric across all counties."),
       downloadButton(outputId = "pdf_download_all_counties",
                      label = "All Counties Summary"),
@@ -109,6 +108,7 @@ ui <- fluidPage(
       # Leaflet output ---------------------------------------------------------
       tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"), # This makes the map fill up the page vertically
       tags$style(type = "text/css", "#show-panel {height: 30px; width: 100px;"), # This makes the "compare stats" easybutton bigger
+      tags$style(type = "text/css", ".info.legend.leaflet-control {max-width: 40vw"),
       withSpinner(
         leafletOutput('map')
       ),
