@@ -21,22 +21,55 @@ options(scipen=999,
 
 library(reactlog)
 
-format_num <- function(num){
+# format_num <- function(num){
+#   
+#   # Reformats numbers from 0-1 as %s, anything > 1 with a comma, and anything NA as NA
+#   if(!is.na(num)) {
+#     if(num < 1){
+#       return(paste0(format(round(100 * num, 2), big.mark = ","), "%"))
+#     } else {
+#       return(format(round(num, 2), big.mark = ","))
+#     }
+#   } else {
+#     return(NA)
+#   }
+#   
+# }
+# 
+# format_num_vec <- base::Vectorize(format_num)
+
+format_metric <- function(x, format, diff = FALSE) {
   
-  # Reformats numbers from 0-1 as %s, anything > 1 with a comma, and anything NA as NA
-  if(!is.na(num)) {
-    if(num < 1){
-      return(paste0(format(round(100 * num, 2), big.mark = ","), "%"))
-    } else {
-      return(format(round(num, 2), big.mark = ","))
-    }
+  if (format == "percent") {
+    y <- paste0(round(100* x, 2), "%")
+  } else if (format == "number") {
+    y <- format(round(x, 2), big.mark = ",")
+  } else if (format == "dollar" & x < 0) {
+    y <- paste0("-$", format(round(-x, 2), big.mark = ","))
+  } else if (format == "dollar" & x >= 0) {
+    y <- paste0("$", format(round(x, 2), big.mark = ","))
+  } else if (format == "per_1") {
+    y <- paste0(format(round(x, 2), big.mark = ","), " to 1")
+  } else if (format == "per_1k") {
+    y <- paste0(format(round(x, 2), big.mark = ","), " per 1k")
+  } else if (format == "per_100k") {
+    y <- paste0(format(round(x, 2), big.mark = ","), " per 100k")
+  } else if (format == "ratio") {
+    y <- paste0("1 to ", format(round(x, 2), big.mark = ","))
   } else {
-    return(NA)
+    y <- "ERROR!"
   }
+  
+  if ((x > 0 | is.na(x)) & diff) {
+    y <- paste0("+", y)
+  }
+  
+  return(y)
   
 }
 
-format_num_vec <- base::Vectorize(format_num)
+format_metric <- format_metric |>
+  Vectorize()
 
 # Data =========================================================================
 # Main dataset with all metrics ------------------------------------------------
@@ -218,20 +251,23 @@ function(input, output, session) {
       if(include_stat2) {
         paste0("<b>County</b>: ", county, "<br><b>",
                fill_stat_info()$metric_title, "</b>: ", 
-               format_num_vec(fill_stat), 
-               " (#", fill_stat_rank, ")<br>",
+               format_metric(fill_stat,
+                             format = fill_stat_info()$format), "<br>", 
+               "<b>Rank:</b> #", fill_stat_rank, "<br>",
                "<b>Avg. TN county:</b> ", fill_stat_info()$average_tn_county, 
                "<hr><b>",
                stat2_info()$metric_title, "</b>: ",
-               format_num_vec(stat2),
-               " (#", stat2_rank, ")<br>",
+               format_metric(stat2,
+                             format = stat2_info()$format), "<br>",
+               "<b>Rank:</b> #", stat2_rank, "<br>",
                "<b>Avg. TN county:</b> ", stat2_info()$average_tn_county
         )
       } else {
         paste0("<b>County</b>: ", county, "<br><b>",
                fill_stat_info()$metric_title, "</b>: ",
-               format_num_vec(fill_stat),
-               " (#", fill_stat_rank, ")<br>",
+               format_metric(fill_stat,
+                             format = fill_stat_info()$format), "<br>",
+               "<b>Rank:</b> #", fill_stat_rank, "<br>",
                "<b>Avg. TN county:</b> ", fill_stat_info()$average_tn_county
         )
       }
@@ -327,9 +363,14 @@ function(input, output, session) {
                      y = fill_stat,
                      group = 1,
                      text = paste0("County: ", county, "\n<b>",
-                                   fill_stat_info()$metric_title, "</b>: ", format_num_vec(fill_stat), "<br><b>",
-                                   stat2_info()$metric_title, "</b>: ", format_num_vec(stat2)
-                     ))) +
+                                   fill_stat_info()$metric_title, "</b>: ", 
+                                   format_metric(fill_stat,
+                                                 format = fill_stat_info()$format), "<br><b>",
+                                   stat2_info()$metric_title, "</b>: ", 
+                                   format_metric(stat2,
+                                                 format = stat2_info()$format)
+                     )
+                 )) +
       # The normal points
       geom_point() +
       # The highlighted red point
