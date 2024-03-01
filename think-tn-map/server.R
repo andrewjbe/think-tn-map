@@ -233,11 +233,8 @@ function(input, output, session) {
 
     # Generates map color scale based on selected stat -------------------------
     pal <- colorBin(
-      # palette = info_ds[which(info_ds$variable == input$fill_stat),] |>
-      #   pull(var = "color_scheme"),
       palette = "RdYlGn",
-      # reverse = if_else(info_ds[which(info_ds$variable == input$fill_stat),] |>
-      #                     pull(var = "good_outcomes") == "low", FALSE, TRUE),
+      reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE),
       domain = map_data.react()$fill_stat,
       na.color = "grey",
       bins = 6,

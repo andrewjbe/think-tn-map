@@ -96,8 +96,6 @@ ggplot(county_shape) +
 
 This report summarizes all `r nrow(ds_info) |> format(big.mark=",")` metrics for `r params$county` County. All data was compiled by Think Tennessee from the sources listed.
 
-## All Metrics
-
 ```{r main_table}
 
 format_metric <- function(x, format, diff = FALSE) {
@@ -165,10 +163,16 @@ main_ds |>
     value_fmt = format_metric(value_clean, format),
     rank_fmt = if_else(!is.na(rank), paste0("#", rank), ""),
     county_avg_diff_fmt = format_metric(county_avg_diff, format, diff = TRUE),
-    county_avg_diff_color = if_else(county_avg_diff < 0, "red", "green") # TODO This is where you edit if they want to make the red and green correspond conceptually not just numerically 
+    county_avg_diff_color = case_when(
+      county_avg_diff < 0 & good_outcomes == 1 ~ "red",
+      county_avg_diff > 0 & good_outcomes == 1 ~ "green",
+      county_avg_diff < 0 & good_outcomes == 0 ~ "green", 
+      county_avg_diff > 0 & good_outcomes == 0 ~ "red"
+      )
   ) |> 
   select(c(metric_title, value_fmt, rank_fmt, category,
            average_tn_county, county_avg_diff_color, county_avg_diff_fmt, description, source)) |>
+  group_by(category) |>
   # GT =========================================================================
   gt() |>
   cols_hide(c(county_avg_diff_color, category)) |>
@@ -205,20 +209,9 @@ main_ds |>
       rows = TRUE
     )
   ) |>
-  # Row groups  ----------------------------------------------------------------
-  # tab_row_group(
-  #   label = md("### **Child Wellbeing**"),
-  #   rows = category == "Children"
-  # ) |>
-  # tab_row_group(
-  #   label = md("### **Economy**"),
-  #   rows = category == "Economy"
-  # ) |>
   # Options  -------------------------------------------------------------------
   opt_vertical_padding(scale = 0.3) |>
   opt_stylize(style = 6,
               color = "green")
 
-    
 ```
-    
