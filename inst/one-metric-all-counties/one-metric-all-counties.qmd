@@ -1,6 +1,6 @@
 ---
 title: "Think Tennessee Data Map"
-subtitle: "All Counties: `r params$metric`"
+subtitle: "Metric Summary: `r params$metric`"
 format:
   ojo-report-template-html: default
 # Formatting options -----------------------------------------------------------
@@ -60,14 +60,14 @@ ds_info_long <- ds_info |>
 
 ```
 
-This report summarizes the `r params$metric` metric in all `r nrow(main_ds) |> format(big.mark=",")` counties in Tennessee. All data was compiled by Think Tennessee.
-
 ```{r}
+htmltools::tag("style", "h3 {margin-top: 0px;}")
+
 ds_info_long |>
   select(category, description, years, source) |>
   pivot_longer(everything()) |>
   mutate(name = paste0(make_clean_names(name, "title"), ":")) |>
-  gt(caption = paste0("Metric Details: ", params$metric)) |>
+  gt(caption = md(paste0("### Metric Details: ", params$metric))) |>
   cols_label(
     name = md(""),
     value = md(""),
@@ -84,6 +84,7 @@ ds_info_long |>
   
 ```
 
+## `r params$metric` -- All Counties
 
 ```{r main_table}
 
@@ -138,7 +139,12 @@ main_ds |>
     value_fmt = format_metric(value_clean, format),
     rank_fmt = if_else(!is.na(rank), paste0("#", rank), ""),
     county_avg_diff_fmt = format_metric(county_avg_diff, format, diff = TRUE),
-    county_avg_diff_color = if_else(county_avg_diff < 0, "red", "green") # TODO This is where you edit if they want to make the red and green correspond conceptually not just numerically 
+    county_avg_diff_color = case_when(
+      county_avg_diff < 0 & good_outcomes == 1 ~ "red",
+      county_avg_diff > 0 & good_outcomes == 1 ~ "green",
+      county_avg_diff < 0 & good_outcomes == 0 ~ "green", 
+      county_avg_diff > 0 & good_outcomes == 0 ~ "red"
+    )
   ) |> 
   select(c(county, value_fmt, rank_fmt, 
            average_tn_county, county_avg_diff_color, county_avg_diff_fmt)) |>
