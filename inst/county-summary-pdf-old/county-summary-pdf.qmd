@@ -1,0 +1,422 @@
+---
+title: "Think Tennessee Data Map"
+subtitle: "`r params$county` County Fact Sheet"
+format:
+  ojo-report-template-html: default
+# Formatting options -----------------------------------------------------------
+logo: "www/thinktennessee-logo-white.png" # Other options are in the /www/ directory
+number-sections: true
+smooth-scroll: true
+title-block-banner: "#1a884a" # The background color for the header banner
+title-block-banner-color: "white" # The text color for the header banner
+fontcolor: "black" # Default text color for the body
+linkcolor: "#1a884a" # Default link color for the body
+toc: false # This should be 'false' if your end goal is a PDF 
+knitr: 
+  opts_chunk: 
+    fig.align: center # These are the default chunk options
+    echo: false
+    warning: false
+    message: false
+params:
+  county: "Shelby"
+# Remember that there are other formatting options in /_extensions/ojo-report-template/custom.scss
+# You can also edit the header structure in /_extensions/ojo-report-template/title-block.html
+# Document info ----------------------------------------------------------------
+# author: Analyst
+# date: last-modified
+# description: |
+#   This is where you can write a brief description of the publication if needed.
+#   If you don't need it for your current project, you can just delete this parameter.
+# abstract-title: "Executive Summary"
+# abstract: |
+#   This is where we'd write an abstract / executive summary. You can change the title
+#   for this section by changing the `abstract-title` parameter, and you can 
+#   delete the parameter if you don't need it.
+---
+
+```{r}
+
+# To render to PDF after you've rendered your .html document:
+# pagedown::chrome_print("./inst/county-summary-pdf/county-summary-pdf.html",
+#                        "./inst/county-summary-pdf/county-summary-pdf.pdf", format = "pdf")
+
+library(tidyverse)
+library(ggthemes)
+library(sf)
+library(gt)
+library(janitor)
+library(here)
+
+options(scipen=999)
+
+# Data -------------------------------------------------------------------------
+main_ds <- read_csv("./data/data-clean.csv")
+
+ds_info <- read_csv("./data/data-info.csv") |>
+  clean_names()
+
+tn_county_seats <- read_csv("./data/tn-county-info.csv") |>
+  clean_names() |>
+  transmute(
+    county = str_remove_all(county, " County"), 
+    county_seat
+    ) 
+
+census_ds <- tidycensus::get_acs(
+  geography = "county",
+  state = "TN",
+  # county = params$county,
+  year = 2022, 
+  variables = c(
+    #total
+    total_population = "B01003_001",
+    #race
+    race_white = "B02001_002",
+    race_black = "B02001_003",
+    race_ai_an = "B02001_004",
+    race_asian = "B02001_005",
+    race_nh_pi = "B02001_006",
+    race_other = "B02001_007",
+    race_two_more = "B02001_007",
+    race_two_more_inc = "B02001_009",
+    race_two_more_exc = "B02001_010",
+    #sex
+    sex_m = "B01001_002",
+    sex_f = "B01001_026",
+    #other
+    age_under_18 = "B09001_001"
+  )) |>
+  mutate(county = str_replace(NAME, " County, Tennessee", "")) |>
+  select(-GEOID) |>
+  left_join(tn_county_seats)
+
+age_breakdown <- tidycensus::get_estimates(geography = "county",
+              product = "characteristics",
+              state = "TN",
+              breakdown = "AGEGROUP",
+              breakdown_labels = T) |>
+  mutate(county = str_replace(NAME, " County, Tennessee", "")) |>
+  select(!c(NAME, GEOID), age_group = AGEGROUP) |>
+  filter(grepl("Age ", age_group))
+
+retirement_ages <- c("Age 65 to 69 years", "Age 70 to 74 years", "Age 75 to 79 years", "Age 80 to 84 years", "Age 85 years and older")
+
+retirement_age_breakdown <- age_breakdown |>
+  filter(age_group %in% retirement_ages) |>
+  group_by(county) |>
+  summarize(
+    total_retirement_age_pop = sum(value)
+  )
+
+census_ds <- left_join(census_ds, retirement_age_breakdown)
+
+```
+
+:::: {.columns}
+
+::: {.column width="60%"}
+
+## `r params$county` County Summary
+
+:::
+
+::: {.column width="40%"}
+
+```{r county_map, fig.height=1,fig.width=4}
+# Map w/ county filled in ------------------------------------------------------
+county_shape <- read_rds("./data/tn-counties.rds") |>
+  rename(county = NAME)
+given_county_shape <- county_shape |>
+  filter(county == params$county)
+
+ggplot(county_shape) +
+  # annotation_map_tile(zoom = 8, zoomin = -1) +
+  geom_sf(fill = NA, color = "black") +
+  geom_sf(data = given_county_shape, fill = "red", alpha = 0.5) +
+  theme_map() 
+```
+
+:::
+
+::::
+
+This report summarizes all `r nrow(ds_info) |> format(big.mark=",")` metrics for `r params$county` County. All data was compiled by Think Tennessee from the sources listed.
+
+```{r county_census_stats}
+# Census summary table ---------------------------------------------------------
+census_ds |>
+  pivot_wider(
+    names_from = variable,
+    values_from = c(estimate, moe)
+  ) |>
+  mutate(estimate_total_population_rank = rank(-estimate_total_population)) |>
+  filter(county == params$county) |>
+  transmute(
+    county_seat = county_seat,
+    total_pop = paste0(
+      format(estimate_total_population, big.mark = ","), 
+      " (#", estimate_total_population_rank, " of 95)"
+    ),
+    child_pop_pct = paste0(
+      round(100 * estimate_age_under_18 / estimate_total_population, 2), "%"
+    ),
+    retirement_pop_pct = paste0(
+      round(100 * total_retirement_age_pop / estimate_total_population, 2), "%"
+    ),
+    f_pop_pct = paste0(
+      round(100 * estimate_sex_f / estimate_total_population, 2), "%"
+    )
+  ) |>
+  rename(
+    `County Seat` = county_seat,
+    `Total Population` = total_pop,
+    `Child Pop. (% under 18)` = child_pop_pct,
+    `Retirement Age Pop. (% over 65)` = retirement_pop_pct,
+    `Sex Ratio (% Female)` = f_pop_pct
+  ) |>
+  pivot_longer(everything()) |>
+  gt() |>
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = name,
+      rows = TRUE
+    )
+  ) |>
+  tab_header(
+    title = md("Census Data County Summary")
+  ) |>
+  tab_options(
+    column_labels.hidden = TRUE,
+    # table.align = "left",
+    table.font.size = "80%"
+  ) |>
+  tab_footnote(
+    footnote = md("Source: 2022 American Community Survey"),
+    placement = "right"
+  )
+
+```
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+```{r race_graph, fig.height=4, fig.width=4}
+# Race -------------------------------------------------------------------------
+census_ds |>
+  filter(county == params$county) |>
+  filter(str_detect(variable, "race_")) |>
+  transmute(
+    # race = str_remove(variable, "race_"),
+    race = case_when(
+      variable == "race_white" ~ "White",
+      variable == "race_black" ~ "Black",
+      variable == "race_ai_an" ~ "American Indian /\nAlaska Native",
+      variable == "race_asian" ~ "Asian",
+      variable == "race_nh_pi" ~ "Native Hawaiian /\nPacific Islander",
+      variable == "race_other" ~ "Other",
+      variable == "race_two_more_inc" ~ "Two or More\n(Inclusive)",
+      variable == "race_two_more_exc" ~ "Two or More\n(Exclusive)",
+      TRUE ~ NA_character_
+    ),
+    estimate_fmt = estimate,
+    estimate = as.character(estimate)
+    # estimate_formatted = paste0(format(estimate, big.mark = ","), 
+    #                             " (+/- ", format(moe, big.mark = ","), ")")
+  ) |>
+  # arrange(desc(estimate_fmt)) |>
+  # adorn_totals() |>
+  adorn_percentages("col") |>
+  adorn_pct_formatting() |>
+  # adorn_ns() |>
+  mutate(estimate = as.numeric(estimate)) |>
+  ggplot(aes(x = reorder(race, estimate), 
+             y = estimate,
+             fill = reorder(race, estimate),
+             label = estimate_fmt
+             )) +
+  geom_col() +
+  geom_text(hjust = -0.1) +
+  scale_y_continuous(labels = scales::comma,
+                     expand = expansion(mult = c(0, 0.4))) +
+  scale_fill_economist() +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.title = element_blank(),
+    plot.title.position = "plot",
+  ) +
+  guides(fill = "none") +
+  labs(title = "Demographics: Race",
+       caption = "Source: 2022 American Community Survey")
+  
+
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r age_graph, fig.height=4, fig.width=4}
+# Age --------------------------------------------------------------------------
+# age_breakdown |>
+#   filter(county == params$county) |>
+#   select(-c(year, county)) |>
+#   gt()
+
+age_breakdown |>
+  filter(county == params$county) |>
+  ggplot(aes(x = fct_rev(age_group), y = value)) +
+  geom_col(fill = "#f8b43c") +
+  coord_flip() +
+  theme_minimal() +
+  scale_y_continuous(labels = scales::comma) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.title = element_blank(),
+    plot.title.position = "plot"
+  ) +
+  labs(title = "Demographics: Age",
+       caption = "Source: 2022 American Community Survey")
+
+```
+
+:::
+
+::::
+
+---
+
+{{< pagebreak >}}
+
+## All Metrics
+
+```{r main_table}
+
+format_metric <- function(x, format, diff = FALSE) {
+  
+  if (format == "percent") {
+    y <- paste0(round(100* x, 2), "%")
+  } else if (format == "number") {
+    y <- format(round(x, 2), big.mark = ",")
+  } else if (format == "dollar" & x < 0) {
+    y <- paste0("-$", format(round(-x, 2), big.mark = ","))
+  } else if (format == "dollar" & x >= 0) {
+    y <- paste0("$", format(round(x, 2), big.mark = ","))
+  } else if (format == "per_1") {
+    y <- paste0(format(round(x, 2), big.mark = ","), " to 1")
+  } else if (format == "per_1k") {
+    y <- paste0(format(round(x, 2), big.mark = ","), " per 1k")
+  } else if (format == "per_100k") {
+    y <- paste0(format(round(x, 2), big.mark = ","), " per 100k")
+  } else if (format == "ratio") {
+    y <- paste0("1 to ", format(round(x, 2), big.mark = ","))
+  } else {
+      y <- "ERROR!"
+  }
+  
+  if ((x > 0 | is.na(x)) & diff) {
+    y <- paste0("+", y)
+  }
+  
+  return(y)
+  
+}
+
+combine_metric_rank <- function(metric, rank) {
+  ifelse(
+    is.na(rank), 
+    as.character(metric), 
+    paste0(metric, ";", rank)
+  )
+}
+
+main_ds |>
+  filter(county == params$county) |>
+  mutate(
+    across(
+      .cols = !c(ends_with("_rank"), "county"),
+      .fns = ~combine_metric_rank(., get(paste0(cur_column(), "_rank")))
+    )
+  ) |>
+  select(!ends_with("_rank")) |>
+  pivot_longer(
+    cols = -county,
+    names_to = "metric"
+  ) |> 
+  separate_wider_delim(
+    cols = value,
+    delim = ";",
+    names = c("value", "rank"),
+    too_few = "align_start"
+  ) |>
+  left_join(ds_info, by = c("metric" = "variable")) |>
+  rowwise() |>
+  mutate(
+    value_clean = as.numeric(value),
+    county_avg_diff = value_clean - average_tn_county_clean,
+    value_fmt = format_metric(value_clean, format),
+    rank_fmt = if_else(!is.na(rank), paste0("#", rank), ""),
+    county_avg_diff_fmt = format_metric(county_avg_diff, format, diff = TRUE),
+    county_avg_diff_color = if_else(county_avg_diff < 0, "red", "green") # TODO This is where you edit if they want to make the red and green correspond conceptually not just numerically 
+  ) |> 
+  select(c(metric_title, value_fmt, rank_fmt, category,
+           average_tn_county, county_avg_diff_color, county_avg_diff_fmt, description, source)) |>
+  # GT =========================================================================
+  gt() |>
+  cols_hide(c(county_avg_diff_color, category)) |>
+  # Font size, etc.
+  tab_options(
+    # table.align = "left",
+    table.font.size = "60%"
+  ) |>
+  # Green / red values in county diff ------------------------------------------
+  data_color(
+    columns = county_avg_diff_color,
+    target_columns = county_avg_diff_fmt,
+    palette = c("#1a884a", "#C30211"),
+    alpha = 1,
+    apply_to = "text"
+  ) |>
+  # Labels ---------------------------------------------------------------------
+  cols_label(
+    metric_title = md("**Metric**"),
+    value_fmt = md(paste0("**Value in ", params$county, " County**")),
+    rank_fmt = md("**County Rank**"),
+    average_tn_county = md("**Value in Avg. TN County**"),
+    county_avg_diff_fmt = md("**Difference from Avg.**"),
+    description = md("**Description**"),
+    source = md("**Source**")
+  ) |>
+  # Bold metric names  ---------------------------------------------------------
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = metric_title,
+      rows = TRUE
+    )
+  ) |>
+  # Row groups  ----------------------------------------------------------------
+  # tab_row_group(
+  #   label = md("### **Child Wellbeing**"),
+  #   rows = category == "Children"
+  # ) |>
+  # tab_row_group(
+  #   label = md("### **Economy**"),
+  #   rows = category == "Economy"
+  # ) |>
+  # Options  -------------------------------------------------------------------
+  opt_vertical_padding(scale = 0.3) |>
+  opt_stylize(style = 6,
+              color = "green")
+
+    
+```
+    
