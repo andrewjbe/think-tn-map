@@ -52,6 +52,7 @@ for(county in c(county_list)) {
   pagedown::chrome_print(here("inst", "county-summary-pdf", "county-summary-pdf.html"),
                          here("think-tn-map", "docs", "county-summary", 
                               paste0("county-summary-", county, ".pdf")),
+                         options = c(pageRanges = "1-5"),
                          format = "pdf"
   )
   

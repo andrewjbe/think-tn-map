@@ -19,7 +19,7 @@ knitr:
     warning: false
     message: false
 params:
-  county: "Sevier"
+  county: "Shelby"
 # Remember that there are other formatting options in /_extensions/ojo-report-template/custom.scss
 # You can also edit the header structure in /_extensions/ojo-report-template/title-block.html
 # Document info ----------------------------------------------------------------
@@ -64,7 +64,7 @@ tn_county_seats <- read_csv("./data/tn-county-info.csv") |>
   transmute(
     county = str_remove_all(county, " County"), 
     county_seat
-    ) 
+  ) 
 
 supp_age <- read_csv("data/supp-data-age.csv") |>
   mutate(county = str_remove(county, " County, Tennessee"))
@@ -80,7 +80,7 @@ supp_race <- read_csv("data/supp-data-race.csv") |>
 supp_turnout <- read_csv("data/supp-data-turnout.csv") |>
   clean_names()
 supp_unemployment <- read_csv("data/supp-data-unemployment.csv") |>
-  mutate(county = str_remove(county, " County, Tennessee"))
+  mutate(county = str_remove(county, " County, TN"))
 
 # Format metric ----------------------------------------------------------------
 format_metric <- function(x, format, diff = FALSE) {
@@ -102,7 +102,7 @@ format_metric <- function(x, format, diff = FALSE) {
   } else if (format == "ratio") {
     y <- paste0("1 to ", format(round(x, 2), big.mark = ","))
   } else {
-      y <- "ERROR!"
+    y <- "ERROR!"
   }
   
   if ((x > 0 | is.na(x)) & diff) {
@@ -125,7 +125,7 @@ stat_callout <- function(v) {
   
   metric_rank <- main_ds |>
     pull(var = paste0(v, "_rank"))
-                  
+  
   metric_name <- ds_info |>
     filter(variable == v) |>
     pull(var = metric_title)
@@ -133,7 +133,7 @@ stat_callout <- function(v) {
   metric_description <- ds_info |>
     filter(variable == v) |>
     pull(var = description)
-
+  
   
   value_box(
     title = HTML(paste0("<b>", metric_name, "</b>")),
@@ -149,7 +149,7 @@ stat_callout <- function(v) {
 }
 
 tag("style", 
-     ".bslib-value-box .value-box-area{
+    ".bslib-value-box .value-box-area{
      padding: 0;
      }
     .bslib-value-box {
@@ -164,20 +164,23 @@ tag("style",
     }
     .value-box-showcase h1 {
     margin: 0px !important;
-    }")
+    }
+    .img-fluid {
+    margin-bottom: 0px;
+    }
+    .quarto-figure {
+    margin-bottom: 0px;
+    }
+    ")
 
 ```
 
-:::: {.columns}
-
+::: columns
 ::: {.column width="60%"}
-
 ## `r params$county` County Summary
-
 :::
 
 ::: {.column width="40%"}
-
 ```{r county_map, fig.height=1,fig.width=4}
 # Map w/ county filled in ------------------------------------------------------
 county_shape <- read_rds("./data/tn-counties.rds") |>
@@ -191,19 +194,15 @@ ggplot(county_shape) +
   geom_sf(data = given_county_shape, fill = "red", alpha = 0.5) +
   theme_map() 
 ```
-
 :::
-
-::::
+:::
 
 This report provides an overview of `r params$county` County's demographic, economic, and social makeup, in order to provide additional context for the metrics in the interactive map. The county seat of `r params$county` is `r tn_county_seats |> filter(county == params$county) |> pull(var = county_seat)`, Tennessee.
 
 ### Demographics
 
-:::: {.columns}
-
+::: columns
 ::: {.column width="50%"}
-
 ```{r race, fig.height = 3, fig.width = 4}
 supp_race_total <- supp_race |>
   select(-c(starts_with("n_"), "p_hispanic_or_latino", "p_not_hispanic_latino")) |>
@@ -217,7 +216,7 @@ supp_race |>
   filter(county == params$county) |>
   pivot_longer(-county) |>
   rbind(supp_race_total) |>
-    mutate(
+  mutate(
     name = case_when(
       name == "p_white" ~ "White",
       name == "p_black_or_african_american" ~ "Black or\nAfrican American",
@@ -231,11 +230,11 @@ supp_race |>
   ) |>
   ggplot(aes(x = name, y = value, fill = county)) +
   geom_col(position = "dodge") +
-    labs(
+  labs(
     title = "Race Distribution",
     x = "Category",
     y = "",
-    ) +
+  ) +
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::percent) +
   scale_fill_manual(name = "", 
@@ -249,11 +248,9 @@ supp_race |>
 
 
 ```
-
 :::
 
 ::: {.column width="50%"}
-
 ```{r age, fig.height = 3, fig.width = 4}
 supp_age_total <- supp_age |>
   filter(county == "total") |>
@@ -300,10 +297,8 @@ supp_age |>
   )
 
 ```
-
 :::
-
-::::
+:::
 
 ```{r income, fig.height = 3, fig.width = 8}
 supp_income_total <- supp_income |>
@@ -337,11 +332,11 @@ supp_income |>
   ) |> 
   ggplot(aes(x = name, y = value, fill = county)) +
   geom_col(position = "dodge") +
-    labs(
+  labs(
     title = "Income Distribution",
     x = "Category",
     y = "",
-    ) +
+  ) +
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::percent) +
   scale_fill_manual(name = "", 
@@ -379,6 +374,46 @@ layout_column_wrap(
 )
 ```
 
+::: {style="margin: 50px"}
+:::
+
+```{r unemployment_graph, fig.height=4}
+unemployment_total <- supp_unemployment |>
+  filter(county == "total") |>
+  pivot_longer(-county)
+
+supp_unemployment |>
+  filter(county == params$county) |>
+  pivot_longer(-county) |>
+  rbind(unemployment_total) |>
+  mutate(
+    value = value / 100,
+    name = as.numeric(name)
+  ) |> 
+  ggplot(aes(x = name, y = value, color = county)) +
+  # geom_col(position = "dodge") +
+  geom_line(linewidth = 1.5) +
+  geom_point(size = 1.5) +
+  labs(
+    title = "Unemployment Rate",
+    x = "Year",
+    y = "",
+  ) +
+  scale_y_continuous(limits = c(0 , NA),
+                     labels = scales::percent) +
+  scale_color_manual(name = "", 
+                     labels = c(paste(params$county, "County"), "Tennessee"),
+                     values = c("#1a884a", "#f8b43c")
+  ) +
+  ggthemes::theme_excel_new() +
+  theme(
+    legend.position = "bottom"
+  )
+
+```
+
+{{< pagebreak >}}
+
 ### Debt and Household Finances
 
 Selected metrics related to **debt and household finances** in `r params$county` County are shown below.
@@ -399,6 +434,57 @@ layout_column_wrap(
 )
 ```
 
+::: {style="margin: 100px"}
+:::
+
+```{r debt_graph, fig.height=5}
+supp_debt_total <- supp_debt |>
+  filter(county == "total") |>
+  pivot_longer(-county)
+
+supp_debt |>
+  filter(county == params$county) |>
+  pivot_longer(-county) |>
+  rbind(supp_debt_total) |>
+  mutate(
+    name = case_when(
+      name == "share_with_any_debt_in_collections_all" ~ 
+        "Share w/ Any Debt\nin Collections",
+      name == "share_with_medical_debt_in_collections_all" ~ 
+        "Share w/ Medical Debt\nin Collections",
+      name == "auto_retail_loan_delinquency_rate_all" ~ 
+        "Auto / Retail Loan\nDelinquency Rate",
+      name == "share_of_student_loan_holders_with_student_debt_in_collections_all" ~ 
+        "Share w/ Student Loan\nDebt in Collections",
+      TRUE ~ name
+    )
+  ) |>
+  mutate(
+    value = parse_number(value) / 100
+  ) |> 
+  ggplot(aes(x = name, y = value, fill = county)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Debt Breakdown",
+    x = "Category",
+    y = "",
+  ) +
+  scale_y_continuous(limits = c(0 , NA),
+                     labels = scales::percent) +
+  scale_fill_manual(name = "", 
+                    labels = c(paste(params$county, "County"), "Tennessee"),
+                    values = c("#1a884a", "#f8b43c")
+  ) +
+  ggthemes::theme_excel_new() +
+  coord_flip() +
+  theme(
+    plot.title.position = "plot"
+  )
+
+```
+
+{{< pagebreak >}}
+
 ### Civic Engagement and Criminal Justice
 
 Selected metrics related to **civic engagement and criminal justice** in `r params$county` County are shown below.
@@ -418,6 +504,53 @@ layout_column_wrap(
   heights_equal = "row"
 )
 ```
+
+::: {style="margin: 100px"}
+:::
+
+```{r turnout_graph, fig.height=4}
+supp_turnout_total <- supp_turnout |>
+  filter(county == "total") |>
+  pivot_longer(-county)
+
+supp_turnout |>
+  filter(county == params$county) |>
+  pivot_longer(-county) |>
+  rbind(supp_turnout_total) |>
+  mutate(
+    name = case_when(
+      name == "total_votes_cast_as_percent_of_registered_voters_2020" ~ 
+        "2020",
+      name == "total_votes_cast_as_percent_of_registered_voters_2022" ~ 
+        "2022",
+      TRUE ~ name
+    )
+  ) |>
+  mutate(
+    value = parse_number(value) / 100
+  ) |> 
+  ggplot(aes(x = name, y = value, fill = county)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Voter Turnout",
+    subtitle = "Total Votes Cast as a % of Registered Voters",
+    x = "Election Year",
+    y = "",
+  ) +
+  scale_y_continuous(limits = c(0 , NA),
+                     labels = scales::percent) +
+  scale_fill_manual(name = "", 
+                    labels = c(paste(params$county, "County"), "Tennessee"),
+                    values = c("#1a884a", "#f8b43c")
+  ) +
+  ggthemes::theme_excel_new() +
+  theme(
+    plot.title.position = "plot"
+  )
+
+```
+
+{{< pagebreak >}}
 
 ### Affordability
 
@@ -441,4 +574,68 @@ layout_column_wrap(
   width = 0.5,
   heights_equal = "row"
 )
+```
+
+::: {style="margin: 20px"}
+:::
+
+```{r housing_stock_graph, fig.height=2.5}
+supp_housing_total <- supp_housing |>
+  filter(county == "average") |>
+  pivot_longer(-county)
+
+supp_housing |>
+  filter(county == params$county) |>
+  pivot_longer(-county) |>
+  rbind(supp_housing_total) |>
+  mutate(
+    name = case_when(
+      name == "built_2020_or_later" ~ "2020 or Later",
+      name == "built_2010_to_2019" ~ "2010-2019",
+      name == "built_2000_to_2009" ~ "2000-2009",
+      name == "built_1990_to_1999" ~ "1990-1999",
+      name == "built_1980_to_1989" ~ "1980-1989",
+      name == "built_1970_to_1979" ~ "1970-1979",
+      name == "built_1960_to_1969" ~ "1960-1969",
+      name == "built_1950_to_1959" ~ "1950-1959",
+      name == "built_1940_to_1949" ~ "1940-1949",
+      name == "built_1939_or_earlier" ~ "1939 or Earlier",
+      TRUE ~ name
+    )
+  ) |>
+  mutate(
+    name = factor(name,
+                  levels = c(
+                    "1939 or Earlier",
+                    "1940-1949",
+                    "1950-1959",
+                    "1960-1969",
+                    "1970-1979",
+                    "1980-1989",
+                    "1990-1999",
+                    "2000-2009",
+                    "2010-2019",
+                    "2020 or Later"
+                  ))
+  ) |> 
+  ggplot(aes(x = name, y = value, fill = county)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Housing Stock by Decade Built",
+    # subtitle = "",
+    x = "Decade",
+    y = "",
+  ) +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  scale_y_continuous(limits = c(0 , NA),
+                     labels = scales::comma) +
+  scale_fill_manual(name = "", 
+                    labels = c(paste(params$county, "County"), "Tennessee"),
+                    values = c("#1a884a", "#f8b43c")
+  ) +
+  ggthemes::theme_excel_new() +
+  theme(
+    plot.title.position = "plot",
+    legend.position = "left"
+  )
 ```
