@@ -207,20 +207,29 @@ function(input, output, session) {
       filter(category == input$stat2_cat) |>
       pull(var = metric_title)
     
-    disabled(
-    selectInput(inputId = "stat2",
-                label = "Comparison Metric",
-                choices = choices_grouped_2,
-                selected = "poverty_rate_child",
-                multiple = FALSE,
-                selectize = TRUE)
-    )
+    if(!input$add_stat2){
+      disabled(
+        selectInput(inputId = "stat2",
+                    label = "Comparison Metric",
+                    choices = choices_grouped_2,
+                    selected = "poverty_rate_child",
+                    multiple = FALSE,
+                    selectize = TRUE)
+      )
+    } else {
+      selectInput(inputId = "stat2",
+                  label = "Comparison Metric",
+                  choices = choices_grouped_2,
+                  selected = "poverty_rate_child",
+                  multiple = FALSE,
+                  selectize = TRUE)
+    }
     
-  })
+  }) 
   
   # Grey out these UI elements when they're inaccessible
-  observe({
-    if(input$add_stat2){
+  observeEvent(input$add_stat2, {
+    if(input$add_stat2 == TRUE){
       shinyjs::enable("stat2")
       shinyjs::enable("stat2_cat")
     } else {

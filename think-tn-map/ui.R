@@ -81,8 +81,8 @@ ui <- fluidPage(
       downloadButton(outputId = "pdf_download_all_counties",
                      label = "All Counties Summary"),
       br(),
-      downloadButton("snapshot_download",
-                     "Map Snapshot"),
+      # downloadButton("snapshot_download",
+      #                "Map Snapshot"),
       hr(),
       # County reports
       h4("County Summaries"),
@@ -91,8 +91,8 @@ ui <- fluidPage(
       selectInput(inputId = "pdf_select_county",
                   label = "Selected County",
                   # choices = tn_county_list, # for DEMO!!!
-                  choices = "Shelby",
-                  selected = "Shelby",
+                  choices = "Anderson",
+                  selected = "Anderson",
                   multiple = FALSE,
                   selectize = TRUE),
       downloadButton(outputId = "pdf_download_county_summary",
