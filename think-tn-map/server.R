@@ -16,6 +16,7 @@ library(sf)
 library(plotly)
 library(htmltools)
 library(htmlwidgets)
+library(stringr)
 options(scipen=999,
         readr.show_col_types = F)
 
@@ -66,6 +67,11 @@ info_ds <- here("data", "data-info.csv") |>
   read_csv() |>
   clean_names()
 
+# Dataset with supplemental numbers --------------------------------------------
+supplemental_ds <- here("data", "data-supplements.csv") |>
+  read_csv() |>
+  clean_names()
+
 # Variable names 
 var_names <- info_ds |> 
   select(variable, metric_title)
@@ -84,6 +90,8 @@ function(input, output, session) {
   # Reactive variables / dataframes ============================================
   # Mapping Data reactive dataframe --------------------------------------------
   map_data.react <- reactive({
+    
+    validate(need(input$fill_stat, label = "fill stat"))
 
     # If you're using a stat2...
     if(input$add_stat2){
@@ -117,6 +125,9 @@ function(input, output, session) {
   })
   
   stat2_info <- reactive({
+    
+    validate(need(input$add_stat2, label = "Please select a comparison metric"))
+    
     info_ds |>
       filter(variable == input$stat2)
   })
@@ -214,8 +225,38 @@ function(input, output, session) {
 
     # Map geometry -------------------------------------------------------------
     m <- left_join(county_shape, map_data.react(), by = "county") |>
-      st_transform(4326)
-
+      st_transform(4326) 
+    
+    # Add fill stat supplemental number if needed...
+    if (fill_stat_info()$supplemental_number == "Y") {
+      fill_stat_supplemental_numbers <- supplemental_ds |>
+        select(fill_stat_supp = paste0(input$fill_stat, "_sup"),
+               county) |>
+        mutate(fill_stat_supp = paste0(" (", format(fill_stat_supp, big.mark = ",", trim = TRUE), ")"))
+        
+      m <- m |>
+        left_join(fill_stat_supplemental_numbers, by = "county") 
+    } else {
+      m <- m |>
+        mutate(fill_stat_supp = "")
+    }
+    
+    # Also add stat2 supplemental number if needed...
+    if (input$add_stat2) {
+      if (stat2_info()$supplemental_number == "Y") {
+        stat2_supplemental_numbers <- supplemental_ds |>
+          select(stat2_supp = paste0(input$stat2, "_sup"),
+                 county) |>
+          mutate(stat2_supp = paste0(" (", format(stat2_supp, big.mark = ",", trim = TRUE), ")"))
+        
+        m <- m |>
+          left_join(stat2_supplemental_numbers, by = "county") 
+      } else {
+        m <- m |>
+          mutate(stat2_supp = "")
+      }
+    }
+    
     # Generates map color scale based on selected stat -------------------------
     pal <- colorBin(
       palette = "RdYlGn",
@@ -227,20 +268,25 @@ function(input, output, session) {
     )
     
     # The map popups
-    generate_popup <- function(county, fill_stat = NA, stat2 = NA, fill_stat_rank = NA, stat2_rank = NA,
+    generate_popup <- function(county, 
+                               fill_stat = NA, stat2 = NA, 
+                               fill_stat_rank = NA, stat2_rank = NA, 
+                               fill_stat_supp = NA, stat2_supp = NA,
                                include_stat2 = FALSE) {
 
       if(include_stat2) {
         paste0("<b>County</b>: ", county, "<br><b>",
                fill_stat_info()$metric_title, "</b>: ", 
                format_metric(fill_stat,
-                             format = fill_stat_info()$format), "<br>", 
+                             format = fill_stat_info()$format), fill_stat_supp,
+               "<br>", 
                "<b>Rank:</b> #", fill_stat_rank, "<br>",
                "<b>Avg. TN county:</b> ", fill_stat_info()$average_tn_county, 
                "<hr><b>",
                stat2_info()$metric_title, "</b>: ",
                format_metric(stat2,
-                             format = stat2_info()$format), "<br>",
+                             format = stat2_info()$format), stat2_supp,
+               "<br>",
                "<b>Rank:</b> #", stat2_rank, "<br>",
                "<b>Avg. TN county:</b> ", stat2_info()$average_tn_county
         )
@@ -248,7 +294,8 @@ function(input, output, session) {
         paste0("<b>County</b>: ", county, "<br><b>",
                fill_stat_info()$metric_title, "</b>: ",
                format_metric(fill_stat,
-                             format = fill_stat_info()$format), "<br>",
+                             format = fill_stat_info()$format), fill_stat_supp,
+               "<br>",
                "<b>Rank:</b> #", fill_stat_rank, "<br>",
                "<b>Avg. TN county:</b> ", fill_stat_info()$average_tn_county
         )
@@ -276,7 +323,9 @@ function(input, output, session) {
                                           stat2 = stat2,
                                           fill_stat_rank = fill_stat_rank,
                                           stat2_rank = stat2_rank,
-                                          include_stat2 = input$add_stat2)
+                                          include_stat2 = input$add_stat2,
+                                          fill_stat_supp = fill_stat_supp,
+                                          stat2_supp = stat2_supp)
       ) |>
       addEasyButton(
         easyButton(

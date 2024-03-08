@@ -118,7 +118,7 @@ ui <- fluidPage(
         absolutePanel(
           id = "plotly_panel",
           class = "panel panel-default",
-          fixed = TRUE,
+          fixed = FALSE,
           draggable = FALSE,
           top = "11%",
           left = "auto",
