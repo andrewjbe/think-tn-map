@@ -56,8 +56,13 @@ ui <- fluidPage(
         type = "text/css", 
         "h3 {
           padding: 0px; margin: 0px; padding-bottom: 5px;
+        }
+        .btn {
+          margin-bottom: 5px;
+          padding-top: 0.1em;
+          padding-bottom: 0.1em;
         }"
-        ),
+      ),
       h3("Mapping Tools"),
       p("Select a category and a metric below to see it displayed on the county map."),
       selectInput(inputId = "fill_stat_cat",
@@ -67,11 +72,17 @@ ui <- fluidPage(
                   multiple = FALSE,
                   selectize = TRUE),
       uiOutput("fill_stat_ui"),
+      checkboxInput(inputId = "show_labels",
+                    label = "Show County Labels?",
+                    value = FALSE),
       # htmlOutput('description_text_fill'),
       # Metric reports
-      p("The PDF report below provides an overview of the selected metric across all counties."),
+      p("Use the buttons below to download a PDF report with the selected metric across all counties, or a snapshot of the current map."),
       downloadButton(outputId = "pdf_download_all_counties",
                      label = "All Counties Summary"),
+      br(),
+      downloadButton("snapshot_download",
+                     "Map Snapshot"),
       hr(),
       # County reports
       h4("County Summaries"),
@@ -88,18 +99,7 @@ ui <- fluidPage(
                      label = "County Overview"),
       downloadButton(outputId = "pdf_download_all_metrics",
                      label = "All Metrics"),
-
-      # hr(),
-      # div("This interactive tool allows you to visualize OK Policy's Child Well-being metrics on a map of Oklahoma's 77 counties.
-      #   You can also click the 'Compare Stats' button in the top right corner to select an additional variable for comparison. The
-      #   map is designed to display more negative outcomes (such as a high unemployment rate or a low median income) with darker colors.",
-      #   HTML("<br><br>"),
-      #   "This tool was developed as part of the Oklahoma Policy Institute's KIDS COUNT research. For more information about OK Policy's KIDS COUNT work, visit its",
-      #   a("KIDS COUNT website", href = "https://okpolicy.org/topic/kids-count/"),
-      #   "All questions, suggestions, and feedback for this tool may be addressed to our research team using the following email address:",
-      #   HTML("<a href='abell@okpolicy.org' target='_blank'>abell@okpolicy.org</a>"),
-      #   style = "font-size:14px;" # <- this font size is only for the paragraph at the bottom, not the whole sidebar
-      # )
+      # Copy for the sidebar can go here if room allows.
       ),
     
     # Main panel ---------------------------------------------------------------
@@ -108,7 +108,6 @@ ui <- fluidPage(
       # Leaflet output ---------------------------------------------------------
       tags$style(type = "text/css", "#map {height: calc(100vh - 80px) !important;}"), # This makes the map fill up the page vertically
       tags$style(type = "text/css", "#show-panel {height: 30px; width: 100px;"), # This makes the "compare stats" easybutton bigger
-      tags$style(type = "text/css", ".info.legend.leaflet-control {max-width: 40vw"),
       withSpinner(
         leafletOutput('map')
       ),

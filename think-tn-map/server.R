@@ -17,8 +17,12 @@ library(plotly)
 library(htmltools)
 library(htmlwidgets)
 library(stringr)
+library(mapview)
+library(webshot)
 options(scipen=999,
         readr.show_col_types = F)
+
+Sys.setenv("OPENSSL_CONF"="/dev/null") # This is necessary for mapview::mapshot()
 
 library(reactlog)
 
@@ -80,7 +84,8 @@ var_names <- info_ds |>
 # county_shape <- read_rds(here("think-tn-map", "data", "tn-counties.rds")) |>
 county_shape <- read_rds(here("data", "tn-counties.rds")) |>
   clean_names() |>
-  rename(county = name)
+  rename(county = name) |>
+  st_transform(4326) 
   
 # Server logic =================================================================
 function(input, output, session) {
@@ -120,13 +125,16 @@ function(input, output, session) {
   
   # Reactive values with currently selected fill stat info ---------------------
   fill_stat_info <- reactive({
+    
+    validate(need(input$fill_stat, message = F))
+    
     info_ds |>
       filter(variable == input$fill_stat)
   })
   
   stat2_info <- reactive({
     
-    validate(need(input$add_stat2, label = "Please select a comparison metric"))
+    validate(need(input$add_stat2, message = F))
     
     info_ds |>
       filter(variable == input$stat2)
@@ -210,6 +218,7 @@ function(input, output, session) {
     
   })
   
+  # Grey out these UI elements when they're inaccessible
   observe({
     if(input$add_stat2){
       shinyjs::enable("stat2")
@@ -221,11 +230,10 @@ function(input, output, session) {
   })
   
   # Leaflet Map ================================================================
-  output$map <- renderLeaflet({
+  map_reactive <- reactive({
 
     # Map geometry -------------------------------------------------------------
-    m <- left_join(county_shape, map_data.react(), by = "county") |>
-      st_transform(4326) 
+    m <- left_join(county_shape, map_data.react(), by = "county")
     
     # Add fill stat supplemental number if needed...
     if (fill_stat_info()$supplemental_number == "Y") {
@@ -309,12 +317,11 @@ function(input, output, session) {
                                      zoomDelta = 0.1,
                                      minZoom = 7, 
                                      maxZoom = 10)) |>
-      # addTiles() |>
-      setView(lng = -86, lat = 35.51, zoom = 7.8) |>
       addPolygons(data = m,
                   layerId = ~paste0(county),
                   label = ~county,
-                  weight = 0.1,
+                  weight = 0.5,
+                  color = "white",
                   smoothFactor = 0.8,
                   fillOpacity = 0.7,
                   fillColor = ~pal(fill_stat),
@@ -327,6 +334,7 @@ function(input, output, session) {
                                           fill_stat_supp = fill_stat_supp,
                                           stat2_supp = stat2_supp)
       ) |>
+      # Add javascript button for comparison stat
       addEasyButton(
         easyButton(
           position = "topright",
@@ -334,32 +342,61 @@ function(input, output, session) {
           id = "show-panel",
           onClick = JS("function(btn, map) {Shiny.onInputChange('eb_show_panel', Math.random());}")
         )
-      ) |>
-      onRender(
-        "function(el, x) {
-          L.control.zoom({position:'bottomleft'}).addTo(this);
-        }") |>
-      addControl(
-        h2(paste0(
-          fill_stat_info()$metric_title
-        )),
-        position = "topleft"
-      ) |>
-      addControl(
-        HTML(paste0(
-          "<b>", fill_stat_info()$metric_title, ": </b>",
-          fill_stat_info()$description, "<br>",
-          "<b>Source: </b>",
-          fill_stat_info()$source,
-          " (", 
-          fill_stat_info()$years, 
-          ")"
-          )),
-        position = "topleft"
-      )
+      ) 
     
   })
   
+  # Render the map in the Shiny application
+  output$map <- renderLeaflet({
+    map_reactive() |>
+      setView(lng = -86, lat = 36, zoom = 8) |>
+      # Title
+      addControl(
+        div(
+          style = "max-width: 40vw",
+          h2(paste0(
+            fill_stat_info()$metric_title
+          ))
+        ),
+        position = "topleft"
+      ) |>
+      # Source / description text
+      addControl(
+        div(style = "max-width: 50vw",
+            HTML(paste0(
+              "<b>", fill_stat_info()$metric_title, ": </b>",
+              fill_stat_info()$description, "<br>",
+              "<b>Source: </b>",
+              fill_stat_info()$source,
+              " (", 
+              fill_stat_info()$years, 
+              ")"
+            ))
+        ),
+        position = "topleft"
+      )
+  })
+  
+  # Observe the show_labels input and add/remove labels accordingly
+  observe({
+    if (input$show_labels) {
+      leafletProxy("map") |>
+        addLabelOnlyMarkers(
+          data = suppressWarnings(st_centroid(county_shape, of_largest_polygon = TRUE)),
+          label = ~county,
+          group = "label",
+          labelOptions = labelOptions(
+            noHide = TRUE,
+            style = c("padding" = "0", "font-weight" = "bold"),
+            direction = "center",
+            textOnly = TRUE
+          )
+        )
+    } else {
+      leafletProxy("map") |>
+        clearGroup("label")
+    }
+  })
 
   # Selected leaflet zip handler -----------------------------------------------
   click_county <- reactiveVal()
@@ -431,7 +468,7 @@ function(input, output, session) {
   })
 
   # Download handlers ==========================================================
-  # PDF download handler -- gets from www file
+  # PDF download handlers -- gets from docs file
   output$pdf_download_all_counties <- downloadHandler(
     filename = function() {
       paste("Think TN Data Map single metric report - ", tolower(fill_stat_info()$metric_title), ".pdf", sep = "")
@@ -461,6 +498,69 @@ function(input, output, session) {
     content = function(file) {
       file.copy(paste0("docs/one-county-all-metrics/one-county-all-metrics-", 
                        input$pdf_select_county, ".pdf"), file)
+    }
+  )
+  
+  # Handler for downloading the map snapshots ----------------------------------
+  output$snapshot_download <- downloadHandler(
+    filename = function() {
+      paste("Think TN Data Map snapshot - ", fill_stat_info()$metric_title, ".png", sep = "")
+    },
+    content = function(file) {
+      shiny::showNotification(paste0("Saving snapshot of current map..."),
+                              duration = 10, type = "message")
+      
+      z <- map_reactive() |>
+        setView(lng = -86, lat = 36.2, zoom = 2) |>
+        # Title
+        addControl(
+          div(
+            style = "max-width: 500px; font-size: large; font-weight: bold;",
+            fill_stat_info()$metric_title
+          ),
+          position = "topleft"
+        ) |>
+        # Source
+        addControl(
+          div(style = "max-width: 400px; font-size: x-small;",
+              HTML(paste0(
+                "<b>", fill_stat_info()$metric_title, ": </b>",
+                fill_stat_info()$description, "<br>",
+                "<b>Source: </b>",
+                fill_stat_info()$source,
+                " (", 
+                fill_stat_info()$years, 
+                ")"
+              ))
+          ),
+          position = "topleft"
+        )
+      
+      if(input$show_labels) {
+        z <- z |>
+          addLabelOnlyMarkers(
+            data = st_centroid(county_shape),
+            label = ~county,
+            group = "label",
+            labelOptions = labelOptions(
+              noHide = TRUE,
+              style = c("padding" = "0", "font-weight" = "bold"),
+              direction = "center",
+              textOnly = TRUE
+            )
+          )
+      }
+      
+      mapview::mapshot(
+        z,
+        file = file,
+        remove_controls = c("easyButton"),
+        # vwidth = 1600,
+        # vheight = 1000
+        vwidth = 800,
+        vheight = 500
+      )
+      
     }
   )
 
