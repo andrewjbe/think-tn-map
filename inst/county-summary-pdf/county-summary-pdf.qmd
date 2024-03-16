@@ -1,17 +1,17 @@
 ---
-title: "Think Tennessee Data Map"
+title: "2024 Think<em>Tennessee</em> State of the Counties Dashboard"
 subtitle: "`r params$county` County Fact Sheet"
 format:
   ojo-report-template-html: default
 # Formatting options -----------------------------------------------------------
 logo: "www/thinktennessee-logo-white.png" # Other options are in the /www/ directory
-number-sections: true
+number-sections: false
 smooth-scroll: true
 title-block-banner: "#1a884a" # The background color for the header banner
 title-block-banner-color: "white" # The text color for the header banner
 fontcolor: "black" # Default text color for the body
 linkcolor: "#1a884a" # Default link color for the body
-toc: false # This should be 'false' if your end goal is a PDF 
+toc: false # This should be 'false' if your end goal is a PDF
 knitr: 
   opts_chunk: 
     fig.align: center # These are the default chunk options
@@ -20,19 +20,6 @@ knitr:
     message: false
 params:
   county: "Shelby"
-# Remember that there are other formatting options in /_extensions/ojo-report-template/custom.scss
-# You can also edit the header structure in /_extensions/ojo-report-template/title-block.html
-# Document info ----------------------------------------------------------------
-# author: Analyst
-# date: last-modified
-# description: |
-#   This is where you can write a brief description of the publication if needed.
-#   If you don't need it for your current project, you can just delete this parameter.
-# abstract-title: "Executive Summary"
-# abstract: |
-#   This is where we'd write an abstract / executive summary. You can change the title
-#   for this section by changing the `abstract-title` parameter, and you can 
-#   delete the parameter if you don't need it.
 ---
 
 ```{r}
@@ -86,13 +73,13 @@ supp_unemployment <- read_csv("data/supp-data-unemployment.csv") |>
 format_metric <- function(x, format, diff = FALSE) {
   
   if (format == "percent") {
-    y <- paste0(round(100* x, 2), "%")
+    y <- sprintf("%.1f%%", 100 * x)
   } else if (format == "number") {
     y <- format(round(x, 2), big.mark = ",")
   } else if (format == "dollar" & x < 0) {
     y <- paste0("-$", format(round(-x, 2), big.mark = ","))
   } else if (format == "dollar" & x >= 0) {
-    y <- paste0("$", format(round(x, 2), big.mark = ","))
+    y <- paste0("$", format(round(x, 0), big.mark = ","))
   } else if (format == "per_1") {
     y <- paste0(format(round(x, 2), big.mark = ","), " to 1")
   } else if (format == "per_1k") {
@@ -112,6 +99,15 @@ format_metric <- function(x, format, diff = FALSE) {
   return(y)
   
 }
+
+# Manually adjust long descriptions --------------------------------------------
+ds_info <- ds_info |>
+  mutate(
+    description = case_when(
+      variable == "graduation_rate_all" ~ "Percent of students who graduated with a regular or alternate academic diploma within four years and a summer.",
+      TRUE ~ description
+    )
+  )
 
 # The stat value boxes ---------------------------------------------------------
 stat_callout <- function(v) {
@@ -161,6 +157,12 @@ tag("style",
     .bslib-value-box .value-box-value {
     font-size: 1rem;
     font-weight: bold;
+    margin-bottom: 0px;
+    }
+    .bslib-value-box .value-box-title {
+    margin-bottom: 0px;
+    background-color: #f8b43c;
+    padding: -5px;
     }
     .value-box-showcase h1 {
     margin: 0px !important;
@@ -171,13 +173,19 @@ tag("style",
     .quarto-figure {
     margin-bottom: 0px;
     }
+    body {
+    line-height: 1;
+    }
+    h3 {
+    margin-top: 5px;
+    }
     ")
 
 ```
 
 ::: columns
 ::: {.column width="60%"}
-## `r params$county` County Summary
+## `r params$county` County Demographics
 :::
 
 ::: {.column width="40%"}
@@ -197,13 +205,11 @@ ggplot(county_shape) +
 :::
 :::
 
-This report provides an overview of `r params$county` County's demographic, economic, and social makeup, in order to provide additional context for the metrics in the interactive map. The county seat of `r params$county` is `r tn_county_seats |> filter(county == params$county) |> pull(var = county_seat)`, Tennessee.
+This report provides an overview of `r params$county` County's demographic, economic, and social makeup, in order to provide additional context for the metrics in the interactive map. 
 
-### Demographics
+The county seat of `r params$county` is `r tn_county_seats |> filter(county == params$county) |> pull(var = county_seat)`, Tennessee.
 
-::: columns
-::: {.column width="50%"}
-```{r race, fig.height = 3, fig.width = 4}
+```{r race, fig.height = 2, fig.width = 8}
 supp_race_total <- supp_race |>
   select(-c(starts_with("n_"), "p_hispanic_or_latino", "p_not_hispanic_latino")) |>
   filter(county == "total") |>
@@ -248,10 +254,8 @@ supp_race |>
 
 
 ```
-:::
 
-::: {.column width="50%"}
-```{r age, fig.height = 3, fig.width = 4}
+```{r age, fig.height = 2, fig.width = 8}
 supp_age_total <- supp_age |>
   filter(county == "total") |>
   select(-c(starts_with("n_"), "p_total")) |> 
@@ -297,10 +301,8 @@ supp_age |>
   )
 
 ```
-:::
-:::
 
-```{r income, fig.height = 3, fig.width = 8}
+```{r income, fig.height = 3.5, fig.width = 8}
 supp_income_total <- supp_income |>
   select(-total) |>
   filter(county == "total") |>
@@ -346,7 +348,8 @@ supp_income |>
   ggthemes::theme_excel_new() +
   theme(
     legend.position = "bottom"
-  )
+  ) +
+  coord_flip()
 
 ```
 
@@ -354,7 +357,7 @@ supp_income |>
 
 ### Economy and Working Families
 
-Selected metrics related to the **economy and working families** of `r params$county` County are shown below.
+<!-- Selected metrics related to the **economy and working families** of `r params$county` County are shown below. -->
 
 ```{r economy}
 econ_callouts <- list(
@@ -369,15 +372,19 @@ econ_callouts <- list(
 layout_column_wrap(
   !!!econ_callouts,
   fill = FALSE,
+  fillable = FALSE,
   width = 0.5,
   heights_equal = "row"
 )
 ```
 
-::: {style="margin: 50px"}
+::: {style="margin: 60px"}
 :::
 
-```{r unemployment_graph, fig.height=4}
+::: columns
+::: {.column width="50%"}
+
+```{r unemployment_graph, fig.height=3, fig.width=4}
 unemployment_total <- supp_unemployment |>
   filter(county == "total") |>
   pivot_longer(-county)
@@ -403,7 +410,8 @@ supp_unemployment |>
                      labels = scales::percent) +
   scale_color_manual(name = "", 
                      labels = c(paste(params$county, "County"), "Tennessee"),
-                     values = c("#1a884a", "#f8b43c")
+                     values = c("#1a884a", "#f8b43c"),
+                     guide = guide_legend(override.aes = list(linetype = 0, shape = 15, size = 6))
   ) +
   ggthemes::theme_excel_new() +
   theme(
@@ -412,32 +420,10 @@ supp_unemployment |>
 
 ```
 
-{{< pagebreak >}}
-
-### Debt and Household Finances
-
-Selected metrics related to **debt and household finances** in `r params$county` County are shown below.
-
-```{r finances}
-finances_callouts <- list(
-  stat_callout("bankruptcy_per_100k"),
-  stat_callout("debt_in_collections_any"),
-  stat_callout("debt_income_ratio"),
-  stat_callout("credit_score")
-)
-
-layout_column_wrap(
-  !!!finances_callouts,
-  fill = FALSE,
-  width = 0.5,
-  heights_equal = "row"
-)
-```
-
-::: {style="margin: 100px"}
 :::
+::: {.column width="50%"}
 
-```{r debt_graph, fig.height=5}
+```{r debt_graph, fig.height=3, fig.width=4}
 supp_debt_total <- supp_debt |>
   filter(county == "total") |>
   pivot_longer(-county)
@@ -478,16 +464,42 @@ supp_debt |>
   ggthemes::theme_excel_new() +
   coord_flip() +
   theme(
-    plot.title.position = "plot"
+    plot.title.position = "plot",
+    legend.position = "none"
   )
 
+```
+:::
+:::
+
+:::{style="margin: 60px;"}
+:::
+
+### Debt and Household Finances
+
+<!-- Selected metrics related to **debt and household finances** in `r params$county` County are shown below. -->
+
+```{r finances}
+finances_callouts <- list(
+  stat_callout("bankruptcy_per_100k"),
+  stat_callout("debt_in_collections_any"),
+  stat_callout("debt_income_ratio"),
+  stat_callout("credit_score")
+)
+
+layout_column_wrap(
+  !!!finances_callouts,
+  fill = FALSE,
+  width = 0.5,
+  heights_equal = "row"
+)
 ```
 
 {{< pagebreak >}}
 
 ### Civic Engagement and Criminal Justice
 
-Selected metrics related to **civic engagement and criminal justice** in `r params$county` County are shown below.
+<!-- Selected metrics related to **civic engagement and criminal justice** in `r params$county` County are shown below. -->
 
 ```{r civics}
 civic_callouts <- list(
@@ -505,10 +517,13 @@ layout_column_wrap(
 )
 ```
 
-::: {style="margin: 100px"}
+::: {style="margin: 10px"}
 :::
 
-```{r turnout_graph, fig.height=4}
+::: columns
+::: {.column width="30%"}
+
+```{r turnout_graph, fig.height=3, fig.width=2.5}
 supp_turnout_total <- supp_turnout |>
   filter(county == "total") |>
   pivot_longer(-county)
@@ -545,41 +560,16 @@ supp_turnout |>
   ) +
   ggthemes::theme_excel_new() +
   theme(
-    plot.title.position = "plot"
+    plot.title.position = "plot",
+    legend.position = "none"
   )
 
 ```
 
-{{< pagebreak >}}
-
-### Affordability
-
-Selected metrics related to **affordability and cost of living** in `r params$county` County are shown below.
-
-```{r affordability}
-afford_callouts <- list(
-  stat_callout("renter_cost_burdened"),
-  stat_callout("median_rent_increase"),
-  stat_callout("home_owner_cost_burdened"),
-  stat_callout("min_wage_work_hours_2br_affordability"),
-  stat_callout("child_care_cost"),
-  stat_callout("average_commute_time"),
-  stat_callout("injury_crash_per_1k"),
-  stat_callout("energy_burden")
-)
-
-layout_column_wrap(
-  !!!afford_callouts,
-  fill = FALSE,
-  width = 0.5,
-  heights_equal = "row"
-)
-```
-
-::: {style="margin: 20px"}
 :::
+::: {.column width="70%"}
 
-```{r housing_stock_graph, fig.height=2.5}
+```{r housing_stock_graph, fig.height=3, fig.width=5.5}
 supp_housing_total <- supp_housing |>
   filter(county == "average") |>
   pivot_longer(-county)
@@ -590,7 +580,7 @@ supp_housing |>
   rbind(supp_housing_total) |>
   mutate(
     name = case_when(
-      name == "built_2020_or_later" ~ "2020 or Later",
+      name == "built_2020_or_later" ~ "2020+",
       name == "built_2010_to_2019" ~ "2010-2019",
       name == "built_2000_to_2009" ~ "2000-2009",
       name == "built_1990_to_1999" ~ "1990-1999",
@@ -615,7 +605,7 @@ supp_housing |>
                     "1990-1999",
                     "2000-2009",
                     "2010-2019",
-                    "2020 or Later"
+                    "2020+"
                   ))
   ) |> 
   ggplot(aes(x = name, y = value, fill = county)) +
@@ -626,7 +616,7 @@ supp_housing |>
     x = "Decade",
     y = "",
   ) +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  scale_x_discrete(guide = guide_axis(n.dodge = 3)) +
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::comma) +
   scale_fill_manual(name = "", 
@@ -638,4 +628,30 @@ supp_housing |>
     plot.title.position = "plot",
     legend.position = "left"
   )
+```
+:::
+:::
+
+### Affordability
+
+<!-- Selected metrics related to **affordability and cost of living** in `r params$county` County are shown below. -->
+
+```{r affordability}
+afford_callouts <- list(
+  stat_callout("renter_cost_burdened"),
+  stat_callout("median_rent_increase"),
+  stat_callout("home_owner_cost_burdened"),
+  stat_callout("min_wage_work_hours_2br_affordability"),
+  stat_callout("child_care_cost"),
+  stat_callout("average_commute_time"),
+  stat_callout("injury_crash_per_1k"),
+  stat_callout("energy_burden")
+)
+
+layout_column_wrap(
+  !!!afford_callouts,
+  fill = FALSE,
+  width = 0.5,
+  heights_equal = "row"
+)
 ```
