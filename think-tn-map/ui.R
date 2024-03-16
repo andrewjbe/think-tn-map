@@ -126,10 +126,10 @@ ui <- fluidPage(
           width = 400,
           # height = 700,
           wellPanel(
-            plotlyOutput('plotly'),
             checkboxInput(inputId = "add_stat2",
-                          label = "Add comparison metric?",
+                          label = "Enable Comparison Tool",
                           value = FALSE),
+            plotlyOutput('plotly'),
             # Comparison statistic
             selectInput(inputId = "stat2_cat",
                         label = "Comparison Metric Category:",

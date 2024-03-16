@@ -29,15 +29,13 @@ library(reactlog)
 format_metric <- function(x, format, diff = FALSE) {
   
   if (format == "percent") {
-    y <- paste0(round(100* x, 2), "%")
+    y <- sprintf("%.1f%%", 100 * x)
   } else if (format == "number") {
     y <- format(round(x, 2), big.mark = ",")
-  } else if (format == "dollar") {
-    if (!is.na(x) & x < 0) {
-      y <- paste0("-$", format(round(-x, 2), big.mark = ","))
-    } else {
-      y <- paste0("$", format(round(x, 2), big.mark = ","))
-    } 
+  } else if (format == "dollar" & x < 0) {
+    y <- paste0("-$", format(round(-x, 2), big.mark = ","))
+  } else if (format == "dollar" & x >= 0) {
+    y <- paste0("$", format(round(x, 0), big.mark = ","))
   } else if (format == "per_1") {
     y <- paste0(format(round(x, 2), big.mark = ","), " to 1")
   } else if (format == "per_1k") {

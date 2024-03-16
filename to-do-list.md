@@ -1,7 +1,7 @@
 # PDFs
 
 ## General
-* I updated the description/definition of many metrics the last time I sent the master file of data. Can you make sure that the descriptions/definitions are updated throughout the PDFs? Reattached for convenience.
+* ~~I updated the description/definition of many metrics the last time I sent the master file of data. Can you make sure that the descriptions/definitions are updated throughout the PDFs? Reattached for convenience.~~
     * ~~Remove the 1 and 1.1, 1.2 markers alongside section headers on all three PDFs~~
     * ~~Our official term for this project is the “State of the Counties Dashboard” Can you make the title on all three PDFs say “2024 ThinkTennessee State of the Counties Dashboard” instead of Data Map~~
         * ~~Make sure that there is no space between Think and Tennessee~~
@@ -17,7 +17,7 @@
     * ~~The title of this one underneath the header should say Metric Summary to match the header title. In other words, they should both say Metric Summary in the header and in bold.~~
 
 ## County Fact Sheet
-* Generally, the font size is too large, the graphics take up too much space, and the spacing is a little too wide. It’s currently at five pages, and I think we’d like to narrow it down to four or three. Here are some steps to take that can help, but feel free to take other steps.
+* ~~Generally, the font size is too large, the graphics take up too much space, and the spacing is a little too wide. It’s currently at five pages, and I think we’d like to narrow it down to four or three. Here are some steps to take that can help, but feel free to take other steps.~~
     * ~~On the first page, lets change the opening header from “Sevier County Summary” to “Sevier County Demographics”, and go straight to the graphics. We can cut out the report overview language for the sake of brevity. We can also cut out the introductory sentences in each paragraph.~~
     * ~~We need to make a way to scale down the charts, they currently take up too much space on each page. We can narrow the width of each chart, for example, by including a value label for each chart element, as opposed to displaying the y axis labels.~~ 
         * ~~Ideally, for example, Economy and Working Families and Debt and Household Finances should be on one page. Maybe we can reorient the sections and condense them this way?~~
@@ -29,16 +29,9 @@
 
 # WEBSITE
 
-    * Can you move the comparison metric button to enable the comparison function to the top of the compare stats window? And change the language of the button to “Enable Comparison Tool”
-    Im receiving an error message and am unable to see the maps for:
-        Health - Mental Health Providers
-        Health - Primary Care Physicians
-        Housing - Age of Housing Stock
-        Economy - Employment Growth
+* ~~Can you move the comparison metric button to enable the comparison function to the top of the compare stats window?~~
+* ~~And change the language of the button to “Enable Comparison Tool”~~
 
- 
-
- 
 
 MAP SCALES
 
