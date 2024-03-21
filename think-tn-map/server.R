@@ -508,67 +508,67 @@ function(input, output, session) {
     }
   )
   
-  # Handler for downloading the map snapshots ----------------------------------
-  output$snapshot_download <- downloadHandler(
-    filename = function() {
-      paste("Think TN Data Map snapshot - ", fill_stat_info()$metric_title, ".png", sep = "")
-    },
-    content = function(file) {
-      shiny::showNotification(paste0("Saving snapshot of current map..."),
-                              duration = 10, type = "message")
-      
-      z <- map_reactive() |>
-        setView(lng = -86, lat = 36.2, zoom = 2) |>
-        # Title
-        addControl(
-          div(
-            style = "max-width: 500px; font-size: large; font-weight: bold;",
-            fill_stat_info()$metric_title
-          ),
-          position = "topleft"
-        ) |>
-        # Source
-        addControl(
-          div(style = "max-width: 400px; font-size: x-small;",
-              HTML(paste0(
-                "<b>", fill_stat_info()$metric_title, ": </b>",
-                fill_stat_info()$description, "<br>",
-                "<b>Source: </b>",
-                fill_stat_info()$source,
-                " (", 
-                fill_stat_info()$years, 
-                ")"
-              ))
-          ),
-          position = "topleft"
-        )
-      
-      if(input$show_labels) {
-        z <- z |>
-          addLabelOnlyMarkers(
-            data = st_centroid(county_shape),
-            label = ~county,
-            group = "label",
-            labelOptions = labelOptions(
-              noHide = TRUE,
-              style = c("padding" = "0", "font-weight" = "bold"),
-              direction = "center",
-              textOnly = TRUE
-            )
-          )
-      }
-      
-      mapview::mapshot(
-        z,
-        file = file,
-        remove_controls = c("easyButton"),
-        # vwidth = 1600,
-        # vheight = 1000
-        vwidth = 800,
-        vheight = 500
-      )
-      
-    }
-  )
+  # # Handler for downloading the map snapshots ----------------------------------
+  # output$snapshot_download <- downloadHandler(
+  #   filename = function() {
+  #     paste("Think TN Data Map snapshot - ", fill_stat_info()$metric_title, ".png", sep = "")
+  #   },
+  #   content = function(file) {
+  #     shiny::showNotification(paste0("Saving snapshot of current map..."),
+  #                             duration = 10, type = "message")
+  #     
+  #     z <- map_reactive() |>
+  #       setView(lng = -86, lat = 36.2, zoom = 2) |>
+  #       # Title
+  #       addControl(
+  #         div(
+  #           style = "max-width: 500px; font-size: large; font-weight: bold;",
+  #           fill_stat_info()$metric_title
+  #         ),
+  #         position = "topleft"
+  #       ) |>
+  #       # Source
+  #       addControl(
+  #         div(style = "max-width: 400px; font-size: x-small;",
+  #             HTML(paste0(
+  #               "<b>", fill_stat_info()$metric_title, ": </b>",
+  #               fill_stat_info()$description, "<br>",
+  #               "<b>Source: </b>",
+  #               fill_stat_info()$source,
+  #               " (", 
+  #               fill_stat_info()$years, 
+  #               ")"
+  #             ))
+  #         ),
+  #         position = "topleft"
+  #       )
+  #     
+  #     if(input$show_labels) {
+  #       z <- z |>
+  #         addLabelOnlyMarkers(
+  #           data = st_centroid(county_shape),
+  #           label = ~county,
+  #           group = "label",
+  #           labelOptions = labelOptions(
+  #             noHide = TRUE,
+  #             style = c("padding" = "0", "font-weight" = "bold"),
+  #             direction = "center",
+  #             textOnly = TRUE
+  #           )
+  #         )
+  #     }
+  #     
+  #     mapview::mapshot(
+  #       z,
+  #       file = file,
+  #       remove_controls = c("easyButton"),
+  #       # vwidth = 1600,
+  #       # vheight = 1000
+  #       vwidth = 800,
+  #       vheight = 500
+  #     )
+  #     
+  #   }
+  # )
 
 }

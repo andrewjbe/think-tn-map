@@ -33,19 +33,19 @@
 * ~~And change the language of the button to “Enable Comparison Tool”~~
 
 
-MAP SCALES
+# MAP SCALES
 
-    * Can you toy with some of the color scales for the following maps, Im not really okay with how they are being displayed.
-        * High values in one county depress the color variation for all other counties
-            * Health - Black Uninsured Rate (A county with an uninsured rate below 10% should not be the same color as a county with a rate greater than or equal to 10%)
-            Housing - Average Home Sale Price ( A home sale price of $300k or so should not be the same color as a county with $200k, so I guess try to divide them up into specific categories by $100k increase between each color)
-            Housing - Renter Growth - African Americans (Counties with a 7% growth and a 55% growth have the same color. Can we run it without Cumberland and Claiborne and add those manually to the good green color after the fact?)
-            Housing - Renter Growth - Hispanics/Latinos (Counties with a 13% growth have the same color as a 55% growth. This metric is difficult because these are estimates so they swing wildly, can you do the same within and remove Hardin and Lewis and try to even out/redistribute the colors, then add those back in?)
-            Economy - GDP Growth (maybe 5% intervals would display more variation?)
-            Economy - Median Household Income (a county with 40k should not be the same color as a county with a median HH income of 50k, same with one county at 60k and others at 70k)
-            Environment & Energy - Renewable Energy Production (Counties with a 0 MW production should not be the same color as a county that generates 30 MW, or a county that generates 100MW)
-            Criminal Justice & the Courts - Prison Capacity ( counties with 91% capacity are the same color as those with 52% capacity)
-            Elections - Nonprofit Giving (counties with $500 per capita and $200 per capita should not be the same color)
-            Elections - Provisional Ballots Rejected
-        Color scale is just off slightly
-            Post High School Educational Attainment (too many counties are red just because Williamson has attainment rates. Can we adjust it to be a little more middle of the road)
+* Can you toy with some of the color scales for the following maps, Im not really okay with how they are being displayed.
+    * High values in one county depress the color variation for all other counties
+        * Health - Black Uninsured Rate (A county with an uninsured rate below 10% should not be the same color as a county with a rate greater than or equal to 10%)
+        * Housing - Average Home Sale Price ( A home sale price of $300k or so should not be the same color as a county with $200k, so I guess try to divide them up into specific categories by $100k increase between each color)
+        * Housing - Renter Growth - African Americans (Counties with a 7% growth and a 55% growth have the same color. Can we run it without Cumberland and Claiborne and add those manually to the good green color after the fact?)
+        * Housing - Renter Growth - Hispanics/Latinos (Counties with a 13% growth have the same color as a 55% growth. This metric is difficult because these are estimates so they swing wildly, can you do the same within and remove Hardin and Lewis and try to even out/redistribute the colors, then add those back in?)
+        * Economy - GDP Growth (maybe 5% intervals would display more variation?)
+        * Economy - Median Household Income (a county with 40k should not be the same color as a county with a median HH income of 50k, same with one county at 60k and others at 70k)
+        * Environment & Energy - Renewable Energy Production (Counties with a 0 MW production should not be the same color as a county that generates 30 MW, or a county that generates 100MW)
+        * Criminal Justice & the Courts - Prison Capacity ( counties with 91% capacity are the same color as those with 52% capacity)
+        * Elections - Nonprofit Giving (counties with $500 per capita and $200 per capita should not be the same color)
+        * Elections - Provisional Ballots Rejected
+    * Color scale is just off slightly
+        * Post High School Educational Attainment (too many counties are red just because Williamson has attainment rates. Can we adjust it to be a little more middle of the road)

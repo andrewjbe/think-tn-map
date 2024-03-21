@@ -41,9 +41,11 @@ ui <- fluidPage(
     tags$a(img(src = "think-tn-logo.png",
                height = "3%", width = "8%"),
            href = "https://www.thinktennessee.org/"),
-    a("Think Tennessee Data Map [DRAFT / NOT FOR PUBLICATION]", href = "https://www.thinktennessee.org/")
+    # a(paste("Think", em("Tennessee"), "State of the Counties Dashboard [DRAFT / NOT FOR PUBLICATION]"), href = "https://www.thinktennessee.org/")
+    HTML("<a href='https://www.thinktennessee.org/'>Think<em>Tennessee</em> State of the Counties Dashboard [DRAFT / NOT FOR PUBLICATION]</em></a>")
   ),
-  windowTitle = "[DRAFT] Think Tennessee Data Map"),
+  windowTitle = "[DRAFT] ThinkTennessee State of the Counties Dashboard"
+  ),
   
   tags$head(tags$link(rel="shortcut icon", href="favicon.png")),
   
@@ -112,7 +114,11 @@ ui <- fluidPage(
         leafletOutput('map')
       ),
       # Absolute / compare stats panel -----------------------------------------
-      tags$style("#plotly_panel {background-color: #FFFFFF; opacity: 0.9;}"), # Sets background color / alpha of absolute panel
+      tags$style("#plotly_panel {
+                 background-color: #FFFFFF; 
+                 opacity: 0.9;
+                 z-index: 1000;
+                 }"), # Sets background color / alpha of absolute panel, moves to front
       hidden(
         absolutePanel(
           id = "plotly_panel",
