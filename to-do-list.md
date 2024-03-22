@@ -38,14 +38,24 @@
 * Can you toy with some of the color scales for the following maps, Im not really okay with how they are being displayed.
     * High values in one county depress the color variation for all other counties
         * Health - Black Uninsured Rate (A county with an uninsured rate below 10% should not be the same color as a county with a rate greater than or equal to 10%)
+            * I think this looks okay once I doubled the bin number. I've confirmed that 10% is now a cutoff point (which was a happy accident tbh lol)
         * Housing - Average Home Sale Price ( A home sale price of $300k or so should not be the same color as a county with $200k, so I guess try to divide them up into specific categories by $100k increase between each color)
+            * This also looks ok with 12 bins. I confirmed that the bins are going by $100k bands
         * Housing - Renter Growth - African Americans (Counties with a 7% growth and a 55% growth have the same color. Can we run it without Cumberland and Claiborne and add those manually to the good green color after the fact?)
+            * Swapped to numeric scale
         * Housing - Renter Growth - Hispanics/Latinos (Counties with a 13% growth have the same color as a 55% growth. This metric is difficult because these are estimates so they swing wildly, can you do the same within and remove Hardin and Lewis and try to even out/redistribute the colors, then add those back in?)
+            * Swapped to numeric scale
         * Economy - GDP Growth (maybe 5% intervals would display more variation?)
+            * This looks good with 10 bins, 
         * Economy - Median Household Income (a county with 40k should not be the same color as a county with a median HH income of 50k, same with one county at 60k and others at 70k)
+            * This looks just fine with 10, confirmed that it bands it by $10k
         * Environment & Energy - Renewable Energy Production (Counties with a 0 MW production should not be the same color as a county that generates 30 MW, or a county that generates 100MW)
+            * Changed this to numeric
         * Criminal Justice & the Courts - Prison Capacity ( counties with 91% capacity are the same color as those with 52% capacity)
+            * Their specific ask is solved with 10 bins. This ranges above 100% so it's not quite as clean as the others but I think it looks fine now.
         * Elections - Nonprofit Giving (counties with $500 per capita and $200 per capita should not be the same color)
-        * Elections - Provisional Ballots Rejected
-    * Color scale is just off slightly
+            * Switched to numeric
+        * Elections - Provisional Ballots Rejected (Color scale is just off slightly)
+            * Switched to numeric
         * Post High School Educational Attainment (too many counties are red just because Williamson has attainment rates. Can we adjust it to be a little more middle of the road)
+            * Adjusted this to use 5 bins instead of 10

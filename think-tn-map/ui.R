@@ -79,7 +79,7 @@ ui <- fluidPage(
                     value = FALSE),
       # htmlOutput('description_text_fill'),
       # Metric reports
-      p("Use the buttons below to download a PDF report with the selected metric across all counties, or a snapshot of the current map."),
+      p("Use the buttons below to download a PDF report with the selected metric across all counties."),
       downloadButton(outputId = "pdf_download_all_counties",
                      label = "All Counties Summary"),
       br(),

@@ -22,13 +22,15 @@ library(webshot)
 options(scipen=999,
         readr.show_col_types = F)
 
-Sys.setenv("OPENSSL_CONF"="/dev/null") # This is necessary for mapview::mapshot()
+# Sys.setenv("OPENSSL_CONF"="/dev/null") # This is necessary for mapview::mapshot()
 
 library(reactlog)
 
 format_metric <- function(x, format, diff = FALSE) {
   
-  if (format == "percent") {
+  if (is.na(x)) {
+    y <- x
+  } else if (format == "percent") {
     y <- sprintf("%.1f%%", 100 * x)
   } else if (format == "number") {
     y <- format(round(x, 2), big.mark = ",")
@@ -273,16 +275,35 @@ function(input, output, session) {
     }
     
     # Generates map color scale based on selected stat -------------------------
-    pal <- colorBin(
-      palette = "RdYlGn",
-      reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE),
-      domain = map_data.react()$fill_stat,
-      na.color = "grey",
-      bins = 6,
-      pretty = TRUE
-    )
+    # These couple of metrics look better as numeric scales...
+    if(input$fill_stat %in% c("renter_growth_black", "renter_growth_hispanic",
+                              "renewable_energy_infr", "nonprofit_giving_per_captia",
+                              "provisional_ballots_rejected")) {
+      pal <- colorNumeric(
+        palette = "RdYlGn",
+        reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE),
+        domain = map_data.react()$fill_stat,
+        na.color = "grey"
+      )
+    } else {
+      # ...but for most of the rest, use a 10-bin scale (which lines up well with 0-100% values)
+      n_bins <- 10
+      # Adjustment because they requested this one be "more middle of the road"
+      if (input$fill_stat == "post_hs_attainment") {
+        n_bins <- 5
+      }
+      
+      pal <- colorBin(
+        palette = "RdYlGn",
+        reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE),
+        domain = map_data.react()$fill_stat,
+        na.color = "grey",
+        bins = n_bins,
+        pretty = TRUE
+      )
+    }
     
-    # The map popups
+    # Generate the map popups
     generate_popup <- function(county, 
                                fill_stat = NA, stat2 = NA, 
                                fill_stat_rank = NA, stat2_rank = NA, 
@@ -386,7 +407,7 @@ function(input, output, session) {
   
   # Observe the show_labels input and add/remove labels accordingly
   observe({
-    if (input$show_labels) {
+    if (input$show_labels & !is.null(input$fill_stat)) {
       leafletProxy("map") |>
         addLabelOnlyMarkers(
           data = suppressWarnings(st_centroid(county_shape, of_largest_polygon = TRUE)),
