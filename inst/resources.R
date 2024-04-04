@@ -95,7 +95,10 @@ for(metric in c(metric_list)) {
   
   pagedown::chrome_print(here("inst", "one-metric-all-counties", "one-metric-all-counties.html"),
                          here("think-tn-map", "docs", "one-metric-all-counties", 
-                              paste0("one-metric-all-counties-", metric, ".pdf")),
+                              paste0(
+                                "one-metric-all-counties-",
+                                str_replace_all(metric, "/", ""), 
+                                ".pdf")),
                          format = "pdf"
   )
   

@@ -144,6 +144,7 @@ stat_callout <- function(v) {
   
 }
 
+# Some extra CSS; this should probably go in the _extensions/../custom.scss file tbh
 tag("style", 
     ".bslib-value-box .value-box-area{
      padding: 0;
@@ -205,11 +206,14 @@ ggplot(county_shape) +
 :::
 :::
 
-This report provides an overview of `r params$county` County's demographic, economic, and social makeup, in order to provide additional context for the metrics in the interactive map. 
+This report provides an overview of `r params$county` County's demographic, economic, and social makeup, in order to identify key themes of the interactive map. For the full data and relevant sources, please visit the State of the Counties dashboard online at [thinktennessee.org](https://thinktennessee.org).
 
 The county seat of `r params$county` is `r tn_county_seats |> filter(county == params$county) |> pull(var = county_seat)`, Tennessee.
 
-```{r race, fig.height = 2, fig.width = 8}
+::: columns
+::: {.column width="50%"}
+
+```{r race, fig.height = 3.5, fig.width = 4}
 supp_race_total <- supp_race |>
   select(-c(starts_with("n_"), "p_hispanic_or_latino", "p_not_hispanic_latino")) |>
   filter(county == "total") |>
@@ -255,7 +259,10 @@ supp_race |>
 
 ```
 
-```{r age, fig.height = 2, fig.width = 8}
+:::
+::: {.column width="50%"}
+
+```{r age, fig.height = 3.5, fig.width = 4}
 supp_age_total <- supp_age |>
   filter(county == "total") |>
   select(-c(starts_with("n_"), "p_total")) |> 
@@ -301,6 +308,9 @@ supp_age |>
   )
 
 ```
+
+:::
+:::
 
 ```{r income, fig.height = 3.5, fig.width = 8}
 supp_income_total <- supp_income |>
@@ -581,14 +591,10 @@ supp_housing |>
   mutate(
     name = case_when(
       name == "built_2020_or_later" ~ "2020+",
-      name == "built_2010_to_2019" ~ "2010-2019",
-      name == "built_2000_to_2009" ~ "2000-2009",
-      name == "built_1990_to_1999" ~ "1990-1999",
-      name == "built_1980_to_1989" ~ "1980-1989",
-      name == "built_1970_to_1979" ~ "1970-1979",
-      name == "built_1960_to_1969" ~ "1960-1969",
-      name == "built_1950_to_1959" ~ "1950-1959",
-      name == "built_1940_to_1949" ~ "1940-1949",
+      name == "built_2000_to_2019" ~ "2000-2019",
+      name == "built_1980_to_1999" ~ "1980-1999",
+      name == "built_1960_to_1979" ~ "1960-1979",
+      name == "built_1940_to_1959" ~ "1940-1959",
       name == "built_1939_or_earlier" ~ "1939 or Earlier",
       TRUE ~ name
     )
@@ -597,14 +603,10 @@ supp_housing |>
     name = factor(name,
                   levels = c(
                     "1939 or Earlier",
-                    "1940-1949",
-                    "1950-1959",
-                    "1960-1969",
-                    "1970-1979",
-                    "1980-1989",
-                    "1990-1999",
-                    "2000-2009",
-                    "2010-2019",
+                    "1940-1959",
+                    "1960-1979",
+                    "1980-1999",
+                    "2000-2019",
                     "2020+"
                   ))
   ) |> 
@@ -616,7 +618,7 @@ supp_housing |>
     x = "Decade",
     y = "",
   ) +
-  scale_x_discrete(guide = guide_axis(n.dodge = 3)) +
+  scale_x_discrete(guide = guide_axis(angle = 45)) +
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::comma) +
   scale_fill_manual(name = "", 
@@ -632,7 +634,7 @@ supp_housing |>
 :::
 :::
 
-### Affordability
+### Transportation, Housing, and Childcare
 
 <!-- Selected metrics related to **affordability and cost of living** in `r params$county` County are shown below. -->
 
