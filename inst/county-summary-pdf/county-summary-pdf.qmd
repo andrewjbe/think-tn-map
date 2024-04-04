@@ -2,7 +2,7 @@
 title: "2024 Think<em>Tennessee</em> State of the Counties Dashboard"
 subtitle: "`r params$county` County Fact Sheet"
 format:
-  ojo-report-template-html: default
+  andrew-report-template-html: default
 # Formatting options -----------------------------------------------------------
 logo: "www/thinktennessee-logo-white.png" # Other options are in the /www/ directory
 number-sections: false

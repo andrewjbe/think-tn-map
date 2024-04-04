@@ -2,7 +2,7 @@
 title: "2024 Think<em>Tennessee</em> State of the Counties Dashboard"
 subtitle: "All Metrics: `r params$county` County"
 format:
-  ojo-report-template-html: default
+  andrew-report-template-html: default
 # Formatting options -----------------------------------------------------------
 logo: "www/thinktennessee-logo-white.png" # Other options are in the /www/ directory
 number-sections: false
@@ -20,19 +20,6 @@ knitr:
     message: false
 params:
   county: "Shelby"
-# Remember that there are other formatting options in /_extensions/ojo-report-template/custom.scss
-# You can also edit the header structure in /_extensions/ojo-report-template/title-block.html
-# Document info ----------------------------------------------------------------
-# author: Analyst
-# date: last-modified
-# description: |
-#   This is where you can write a brief description of the publication if needed.
-#   If you don't need it for your current project, you can just delete this parameter.
-# abstract-title: "Executive Summary"
-# abstract: |
-#   This is where we'd write an abstract / executive summary. You can change the title
-#   for this section by changing the `abstract-title` parameter, and you can 
-#   delete the parameter if you don't need it.
 ---
 
 ```{r}
