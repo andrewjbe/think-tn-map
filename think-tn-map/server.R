@@ -96,12 +96,6 @@ function(input, output, session) {
   # Mapping Data reactive dataframe --------------------------------------------
   map_data.react <- reactive({
     
-    print(
-      paste0(
-        "fill_stat: ", input$fill_stat, " | stat2: ", input$stat2, " | add_stat2: ", input$add_stat2
-        )
-    )
-    
     validate(need(input$fill_stat, label = "fill stat"))
 
     # If you're using a stat2...
@@ -540,7 +534,6 @@ function(input, output, session) {
       paste("Think TN Data Map single metric report - ", tolower(fill_stat_info()$metric_title), ".pdf", sep = "")
     },
     content = function(file) {
-      # print(paste0("docs/one-metric-all-counties/one-metric-all-counties-", fill_stat_info()$metric_title, ".pdf"))
       file.copy(paste0("docs/one-metric-all-counties/one-metric-all-counties-", 
                        fill_stat_info()$metric_title, ".pdf"),
                 file)
