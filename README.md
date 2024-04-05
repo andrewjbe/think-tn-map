@@ -17,3 +17,5 @@ This repo consists of the following directories:
 * `.Rprofile`, `.gitignore`, and `think-tn-map.Rproj` are miscellaneous R / git helper files.
 * `LICENSE` has the license for the software (it's using the GNU General Public License, which is a very permissive open source license)
 * `README.md` is this file.
+
+## Update process / data ingestion
