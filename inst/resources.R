@@ -23,6 +23,7 @@ options(tigris_use_cache = T)
 #   as_tibble() |>
 #   write_csv(here("think-tn-map", "data", "tn-counties-list.csv"))
 
+tictoc::tic()
 
 # PDFs =========================================================================
 
@@ -106,4 +107,4 @@ for(metric in c(metric_list)) {
   
 }
 
-
+tictoc::toc()

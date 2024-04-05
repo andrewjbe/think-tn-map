@@ -287,7 +287,7 @@ function(input, output, session) {
       )
     } else {
       # ...but for most of the rest, use a 10-bin scale (which lines up well with 0-100% values)
-      n_bins <- 10
+      n_bins <- 9
       # Adjustment because they requested this one be "more middle of the road"
       if (input$fill_stat == "post_hs_attainment") {
         n_bins <- 5
@@ -338,6 +338,27 @@ function(input, output, session) {
       }
 
     }
+    
+    # This creates the label for the legend.
+    get_label_format <- function(format) {
+      if (format == "percent") {
+        return(labelFormat(suffix = "%", between = "% — ", transform = function(x) round(100 * x, 1)))
+      } else if (format == "number") {
+        return(labelFormat(transform = function(x) round(x, 2)))
+      } else if (format == "dollar") {
+        return(labelFormat(prefix = "$", between = " — $", transform = function(x) round(x, 2)))
+      } else if (format == "per_1") {
+        return(labelFormat(suffix = " to 1", transform = function(x) round(x, 2)))
+      } else if (format == "per_1k") {
+        return(labelFormat(suffix = " per 1k", transform = function(x) round(x, 2)))
+      } else if (format == "per_100k") {
+        return(labelFormat(suffix = " per 100k", transform = function(x) round(x, 2)))
+      } else if (format == "ratio") {
+        return(labelFormat(prefix = "1 to ", transform = function(x) round(x, 2)))
+      } else {
+        stop("Error!")
+      }
+    }
 
     # The map itself
     leaflet(options = leafletOptions(zoomControl = FALSE,
@@ -370,7 +391,17 @@ function(input, output, session) {
           id = "show-panel",
           onClick = JS("function(btn, map) {Shiny.onInputChange('eb_show_panel', Math.random());}")
         )
-      ) 
+      ) |>
+      # Add the color scale legend, uses the get_label_format function above
+      addLegend(
+        data = m,
+        position = "bottomleft",
+        pal = pal,
+        values = ~fill_stat,
+        title = fill_stat_info()$metric_title,
+        opacity = 0.7,
+        labFormat = get_label_format(format = fill_stat_info()$format)
+      )
     
   })
   
