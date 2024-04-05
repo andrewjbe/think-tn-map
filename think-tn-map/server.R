@@ -96,6 +96,12 @@ function(input, output, session) {
   # Mapping Data reactive dataframe --------------------------------------------
   map_data.react <- reactive({
     
+    print(
+      paste0(
+        "fill_stat: ", input$fill_stat, " | stat2: ", input$stat2, " | add_stat2: ", input$add_stat2
+        )
+    )
+    
     validate(need(input$fill_stat, label = "fill stat"))
 
     # If you're using a stat2...
@@ -138,6 +144,7 @@ function(input, output, session) {
     
     info_ds |>
       filter(variable == input$stat2)
+    
   })
   
   # Nicely formatted reactive description of fill stat -------------------------

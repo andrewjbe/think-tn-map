@@ -92,8 +92,7 @@ ui <- fluidPage(
         The second lists all metrics for the selected county."),
       selectInput(inputId = "pdf_select_county",
                   label = "Selected County",
-                  # choices = tn_county_list, # for DEMO!!!
-                  choices = "Anderson",
+                  choices = tn_county_list, 
                   selected = "Anderson",
                   multiple = FALSE,
                   selectize = TRUE),
@@ -129,7 +128,7 @@ ui <- fluidPage(
           left = "auto",
           right = 30,
           bottom = "auto",
-          width = 400,
+          width = 450,
           # height = 700,
           wellPanel(
             checkboxInput(inputId = "add_stat2",
@@ -140,7 +139,7 @@ ui <- fluidPage(
             selectInput(inputId = "stat2_cat",
                         label = "Comparison Metric Category:",
                         choices = categories,
-                        selected = "Economy",
+                        selected = "Health",
                         multiple = FALSE,
                         selectize = TRUE),
             uiOutput("stat2_ui"),
