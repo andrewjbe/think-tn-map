@@ -90,7 +90,7 @@ county_shape <- read_rds(here("data", "tn-counties.rds")) |>
 # Server logic =================================================================
 function(input, output, session) {
   
-  # reactlog_enable()
+  # reactlog_enable() # For debugging
   
   # Reactive variables / dataframes ============================================
   # Mapping Data reactive dataframe --------------------------------------------
@@ -251,7 +251,7 @@ function(input, output, session) {
         select(fill_stat_supp = paste0(input$fill_stat, "_sup"),
                county) |>
         mutate(fill_stat_supp = paste0(" (", format(fill_stat_supp, big.mark = ",", trim = TRUE), ")"))
-        
+          
       m <- m |>
         left_join(fill_stat_supplemental_numbers, by = "county") 
     } else {
@@ -276,35 +276,64 @@ function(input, output, session) {
     }
     
     # Generates map color scale based on selected stat -------------------------
+    # This part is very hack-y because I'm trying to address very specific requests
+    # related to how the scales look. There's definitely a better way to do this, sorry!
+    # Pick the colors for the palette
+    if(input$fill_stat %in% c("avg_home_price", "new_home_sales", "renewable_energy_infr")){
+      pal_colors <- "YlGn"
+    } else if (input$fill_stat %in% c("employment_growth")) {
+      pal_colors <- c("#F46D43", "#D9EF8B", "#A6D96A", "#66BD63", "#1A9850")
+    } else {
+      pal_colors <- "RdYlGn"
+    }
+    
+    # Pick the NA color
+    if (input$fill_stat %in% c("renewable_energy_infr")) {
+      na_color <- "#D73027"
+    } else {
+      na_color <- "gray"
+    }
+    
     # These couple of metrics look better as numeric scales...
     if(input$fill_stat %in% c("renter_growth_black", "renter_growth_hispanic",
-                              "renewable_energy_infr", "nonprofit_giving_per_captia",
-                              "provisional_ballots_rejected")) {
+                              "nonprofit_giving_per_captia",
+                              "provisional_ballots_rejected", "avg_home_price",
+                              "mental_healthcare_provider_ratio")) {
       pal <- colorNumeric(
-        palette = "RdYlGn",
+        palette = pal_colors,
         reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE),
         domain = map_data.react()$fill_stat,
-        na.color = "grey"
+        na.color = na_color
+      )
+      # This one looks better as a quantile scale...
+    } else if (input$fill_stat %in% c("renewable_energy_infr")){
+      pal <- colorQuantile(
+        palette = pal_colors,
+        domain = map_data.react()$fill_stat,
+        n = 4,
+        na.color = na_color,
+        reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE)
       )
     } else {
-      # ...but for most of the rest, use a 10-bin scale (which lines up well with 0-100% values)
+      # ...but for most of the rest, use a binned scale 
       n_bins <- 9
-      # Adjustment because they requested this one be "more middle of the road"
-      if (input$fill_stat == "post_hs_attainment") {
+      
+      # Manual adjustments by request
+      if (input$fill_stat %in% c("post_hs_attainment", "employment_growth", "gdp_growth", "disconnected_youth")) {
         n_bins <- 5
       }
-      
+
       pal <- colorBin(
-        palette = "RdYlGn",
+        palette = pal_colors,
         reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE),
         domain = map_data.react()$fill_stat,
-        na.color = "grey",
+        na.color = na_color,
         bins = n_bins,
         pretty = TRUE
       )
     }
     
-    # Generate the map popups
+    # Generate the map popups --------------------------------------------------
     generate_popup <- function(county, 
                                fill_stat = NA, stat2 = NA, 
                                fill_stat_rank = NA, stat2_rank = NA, 
@@ -342,7 +371,9 @@ function(input, output, session) {
     
     # This creates the label for the legend.
     get_label_format <- function(format) {
-      if (format == "percent") {
+      if (input$fill_stat %in% c("renewable_energy_infr")) {
+        return(labelFormat(suffix = " percentile")) # Special case for energy production, which uses a quantile scale
+      } else if (format == "percent") {
         return(labelFormat(suffix = "%", between = "% — ", transform = function(x) round(100 * x, 1)))
       } else if (format == "number") {
         return(labelFormat(transform = function(x) round(x, 2)))
@@ -624,3 +655,4 @@ function(input, output, session) {
   # )
 
 }
+
