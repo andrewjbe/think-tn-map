@@ -42,9 +42,9 @@ ui <- fluidPage(
                height = "3%", width = "8%"),
            href = "https://www.thinktennessee.org/"),
     # a(paste("Think", em("Tennessee"), "State of the Counties Dashboard [DRAFT / NOT FOR PUBLICATION]"), href = "https://www.thinktennessee.org/")
-    HTML("<a href='https://www.thinktennessee.org/'>Think<em>Tennessee</em> State of the Counties Dashboard [DRAFT / NOT FOR PUBLICATION]</em></a>")
+    HTML("<a href='https://www.thinktennessee.org/'>Think<em>Tennessee</em> 2024 State of the Counties Dashboard</em></a>")
   ),
-  windowTitle = "[DRAFT] ThinkTennessee State of the Counties Dashboard"
+  windowTitle = "ThinkTennessee State of the Counties Dashboard"
   ),
   
   tags$head(tags$link(rel="shortcut icon", href="favicon.png")),

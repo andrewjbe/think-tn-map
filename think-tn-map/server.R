@@ -24,7 +24,7 @@ options(scipen=999,
 
 # Sys.setenv("OPENSSL_CONF"="/dev/null") # This is necessary for mapview::mapshot()
 
-library(reactlog)
+# library(reactlog)
 
 format_metric <- function(x, format, diff = FALSE) {
   
