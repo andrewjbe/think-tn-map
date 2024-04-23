@@ -37,13 +37,15 @@ ui <- fluidPage(
   useShinyjs(),
   
   # Application title ----------------------------------------------------------
-  titlePanel(div(
-    tags$a(img(src = "think-tn-logo.png",
-               height = "3%", width = "8%"),
-           href = "https://www.thinktennessee.org/"),
-    # a(paste("Think", em("Tennessee"), "State of the Counties Dashboard [DRAFT / NOT FOR PUBLICATION]"), href = "https://www.thinktennessee.org/")
-    HTML("<a href='https://www.thinktennessee.org/'>Think<em>Tennessee</em> 2024 State of the Counties Dashboard</em></a>")
-  ),
+  titlePanel(
+    title = "",
+  #   div(
+  #   tags$a(img(src = "think-tn-logo.png",
+  #              height = "3%", width = "8%"),
+  #          href = "https://www.thinktennessee.org/"),
+  #   # a(paste("Think", em("Tennessee"), "State of the Counties Dashboard [DRAFT / NOT FOR PUBLICATION]"), href = "https://www.thinktennessee.org/")
+  #   HTML("<a href='https://www.thinktennessee.org/'>Think<em>Tennessee</em> 2024 State of the Counties Dashboard</em></a>")
+  # ),
   windowTitle = "ThinkTennessee State of the Counties Dashboard"
   ),
   
