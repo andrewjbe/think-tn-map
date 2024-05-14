@@ -279,20 +279,16 @@ function(input, output, session) {
     # This part is very hack-y because I'm trying to address very specific requests
     # related to how the scales look. There's definitely a better way to do this, sorry!
     # Pick the colors for the palette
-    if(input$fill_stat %in% c("avg_home_price", "new_home_sales", "renewable_energy_infr")){
+    if(input$fill_stat %in% c("avg_home_price", "new_home_sales")){
       pal_colors <- "YlGn"
-    } else if (input$fill_stat %in% c("employment_growth")) {
+    } else if (input$fill_stat %in% c("employment_growth", "renewable_energy_infr")) {
       pal_colors <- c("#F46D43", "#D9EF8B", "#A6D96A", "#66BD63", "#1A9850")
     } else {
       pal_colors <- "RdYlGn"
     }
     
-    # Pick the NA color
-    if (input$fill_stat %in% c("renewable_energy_infr")) {
-      na_color <- "#D73027"
-    } else {
-      na_color <- "gray"
-    }
+    na_color <- "gray"
+
     
     # These couple of metrics look better as numeric scales...
     if(input$fill_stat %in% c("renter_growth_black", "renter_growth_hispanic",
@@ -305,12 +301,22 @@ function(input, output, session) {
         domain = map_data.react()$fill_stat,
         na.color = na_color
       )
-      # This one looks better as a quantile scale...
+    # We want this one to have zero as one color, and all others binned...
     } else if (input$fill_stat %in% c("renewable_energy_infr")){
-      pal <- colorQuantile(
+      pal <- colorBin(
         palette = pal_colors,
         domain = map_data.react()$fill_stat,
-        n = 4,
+        bins = c(0, 25, 50, 75, 100, 125, 150, 300, 1800),
+        na.color = na_color,
+        reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE)
+      )
+      # We want this one to bin all values above 95
+    } else if (input$fill_stat %in% c("voter_registration_2022", "voter_registration_2020")){
+      # labels <- c("50%", "55%", "60%", "65%", "70%", "75%", "80%", "85%", "90%", "95%+")
+      pal <- colorBin(
+        palette = pal_colors,
+        domain = map_data.react()$fill_stat,
+        bins = c(.5, .55, .6, .65, .7, .75, .8, .85, .9, .95, 1.2),
         na.color = na_color,
         reverse = if_else(fill_stat_info()$good_outcomes == 1, FALSE, TRUE)
       )
@@ -319,7 +325,8 @@ function(input, output, session) {
       n_bins <- 9
       
       # Manual adjustments by request
-      if (input$fill_stat %in% c("post_hs_attainment", "employment_growth", "gdp_growth", "disconnected_youth")) {
+      if (input$fill_stat %in% c("post_hs_attainment", "employment_growth", "gdp_growth",
+                                 "disconnected_youth")) {
         n_bins <- 5
       }
 
@@ -371,8 +378,10 @@ function(input, output, session) {
     
     # This creates the label for the legend.
     get_label_format <- function(format) {
+      # They were very particular about this one so it needs a lot of special stuff
       if (input$fill_stat %in% c("renewable_energy_infr")) {
-        return(labelFormat(suffix = " percentile")) # Special case for energy production, which uses a quantile scale
+        return(labelFormat(transform = function(x) round(x, 1),
+                           suffix = " MW", ))
       } else if (format == "percent") {
         return(labelFormat(suffix = "%", between = "% — ", transform = function(x) round(100 * x, 1)))
       } else if (format == "number") {
@@ -391,6 +400,7 @@ function(input, output, session) {
         stop("Error!")
       }
     }
+    
 
     # The map itself
     leaflet(options = leafletOptions(zoomControl = FALSE,
@@ -439,7 +449,7 @@ function(input, output, session) {
   
   # Render the map in the Shiny application
   output$map <- renderLeaflet({
-    map_reactive() |>
+    map <- map_reactive() |>
       setView(lng = -86, lat = 36, zoom = 8) |>
       # Title
       addControl(
@@ -466,6 +476,7 @@ function(input, output, session) {
         ),
         position = "topleft"
       )
+    
   })
   
   # Observe the show_labels input and add/remove labels accordingly

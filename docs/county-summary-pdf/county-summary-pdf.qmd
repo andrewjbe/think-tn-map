@@ -19,7 +19,7 @@ knitr:
     warning: false
     message: false
 params:
-  county: "Shelby"
+  county: "Van Buren"
 ---
 
 ```{r}

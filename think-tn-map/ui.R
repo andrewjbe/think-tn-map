@@ -28,8 +28,14 @@ categories <- info_ds |>
   distinct(category) |>
   pull(var = category)
 
+# This is a hotfix for the bug that messes up the positioning for the NA legend in the leaflet map
+css_fix <- "div.info.legend.leaflet-control br {clear: both;}"
+html_fix <- as.character(htmltools::tags$style(type = "text/css", css_fix))
+
 # UI code ----------------------------------------------------------------------
 ui <- fluidPage(
+  
+  HTML(html_fix),
 
   theme = bs_theme(bootswatch = "journal",
                    primary = "#1a884a",

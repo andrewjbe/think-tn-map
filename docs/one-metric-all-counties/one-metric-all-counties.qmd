@@ -19,7 +19,7 @@ knitr:
     warning: false
     message: false
 params:
-  metric: "Flood Risk"
+  metric: "Home Ownership Growth - Hispanic & Latino"
 ---
 
 ```{r}
