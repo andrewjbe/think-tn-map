@@ -192,7 +192,7 @@ function(input, output, session) {
     selectInput(inputId = "fill_stat",
                 label = "Map Metric:",
                 choices = choices_grouped,
-                selected = "child_food_insecurity",
+                selected = "gdp_growth",
                 multiple = FALSE,
                 selectize = TRUE)
   })
@@ -221,7 +221,7 @@ function(input, output, session) {
       selectInput(inputId = "stat2",
                   label = "Comparison Metric",
                   choices = choices_grouped_2,
-                  selected = "poverty_rate_child",
+                  selected = "voter_registration_2020",
                   multiple = FALSE,
                   selectize = TRUE)
     }
@@ -279,7 +279,7 @@ function(input, output, session) {
     # This part is very hack-y because I'm trying to address very specific requests
     # related to how the scales look. There's definitely a better way to do this, sorry!
     # Pick the colors for the palette
-    if(input$fill_stat %in% c("avg_home_price", "new_home_sales")){
+    if(input$fill_stat %in% c("new_home_sales")){
       pal_colors <- "YlGn"
     } else if (input$fill_stat %in% c("employment_growth", "renewable_energy_infr")) {
       pal_colors <- c("#F46D43", "#D9EF8B", "#A6D96A", "#66BD63", "#1A9850")
@@ -405,7 +405,7 @@ function(input, output, session) {
     # The map itself
     leaflet(options = leafletOptions(zoomControl = FALSE,
                                      zoomSnap = 0.1,
-                                     zoomDelta = 0.1,
+                                     zoomDelta = 0.3,
                                      minZoom = 7, 
                                      maxZoom = 10)) |>
       addPolygons(data = m,
@@ -443,14 +443,19 @@ function(input, output, session) {
         title = fill_stat_info()$metric_title,
         opacity = 0.7,
         labFormat = get_label_format(format = fill_stat_info()$format)
-      )
+      ) |>
+      # Have to add the zoom back in, for some reason you can't control the position otherwise
+      onRender(
+        "function(el, x) {
+          L.control.zoom({position:'topright'}).addTo(this);
+        }")
     
   })
   
   # Render the map in the Shiny application
   output$map <- renderLeaflet({
     map <- map_reactive() |>
-      setView(lng = -86, lat = 36, zoom = 8) |>
+      setView(lng = -86, lat = 36, zoom = 7) |>
       # Title
       addControl(
         div(
