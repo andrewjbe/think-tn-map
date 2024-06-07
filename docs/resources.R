@@ -43,19 +43,19 @@ for(county in c(county_list)) {
   # County Summaries -----------------------------------------------------------
   cli::cli_alert("Rendering report...")
   
-  system(
-    paste0("quarto render docs/county-summary-pdf/county-summary-pdf.qmd ",
-           "-P county:", county)
-  )
-  
-  cli::cli_alert("Report rendered successfully! Saving as PDF...")
-  
-  pagedown::chrome_print(here("docs", "county-summary-pdf", "county-summary-pdf.html"),
-                         here("think-tn-map", "docs", "county-summary", 
-                              paste0("county-summary-", county, ".pdf")),
-                         options = c(pageRanges = "1-5"),
-                         format = "pdf"
-  )
+  # system(
+  #   paste0("quarto render docs/county-summary-pdf/county-summary-pdf.qmd ",
+  #          "-P county:", county)
+  # )
+  # 
+  # cli::cli_alert("Report rendered successfully! Saving as PDF...")
+  # 
+  # pagedown::chrome_print(here("docs", "county-summary-pdf", "county-summary-pdf.html"),
+  #                        here("think-tn-map", "docs", "county-summary", 
+  #                             paste0("county-summary-", county, ".pdf")),
+  #                        options = c(pageRanges = "1-5"),
+  #                        format = "pdf"
+  # )
   
   cli::cli_alert_success(paste0(county, " County summary .pdf saved successfully!"))
   

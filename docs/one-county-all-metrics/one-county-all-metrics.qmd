@@ -19,7 +19,7 @@ knitr:
     warning: false
     message: false
 params:
-  county: "Van Buren"
+  county: "Wayne"
 ---
 
 ```{r}
@@ -87,14 +87,16 @@ This report summarizes all `r nrow(ds_info) |> format(big.mark=",")` metrics for
 
 format_metric <- function(x, format, diff = FALSE) {
   
-  if (format == "percent") {
+  if (is.na(x)) {
+    y <- as.character(x)
+  } else if (format == "percent") {
     y <- sprintf("%.1f%%", 100 * x)
   } else if (format == "number") {
     y <- format(round(x, 2), big.mark = ",")
   } else if (format == "dollar" & x < 0) {
     y <- paste0("-$", format(round(-x, 2), big.mark = ","))
   } else if (format == "dollar" & x >= 0) {
-    y <- paste0("$", format(round(x, 0), big.mark = ","))
+    y <- paste0("$", format(round(x, 2), big.mark = ","))
   } else if (format == "per_1") {
     y <- paste0(format(round(x, 2), big.mark = ","), " to 1")
   } else if (format == "per_1k") {
@@ -114,6 +116,9 @@ format_metric <- function(x, format, diff = FALSE) {
   return(y)
   
 }
+
+format_metric <- format_metric |>
+  Vectorize()
 
 combine_metric_rank <- function(metric, rank) {
   ifelse(
