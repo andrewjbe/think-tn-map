@@ -41,21 +41,24 @@ county_list <- main_ds$county
 for(county in c(county_list)) {
   
   # County Summaries -----------------------------------------------------------
+  # This is the bit you'd need to run to re-generate the county summaries!
+  # It's using county-summary-pdf.qmd as the template, so if you've updated that and saved it, 
+  # those changes will be reflected in the newly generated PDFs.
   cli::cli_alert("Rendering report...")
   
-  # system(
-  #   paste0("quarto render docs/county-summary-pdf/county-summary-pdf.qmd ",
-  #          "-P county:", county)
-  # )
-  # 
-  # cli::cli_alert("Report rendered successfully! Saving as PDF...")
-  # 
-  # pagedown::chrome_print(here("docs", "county-summary-pdf", "county-summary-pdf.html"),
-  #                        here("think-tn-map", "docs", "county-summary", 
-  #                             paste0("county-summary-", county, ".pdf")),
-  #                        options = c(pageRanges = "1-5"),
-  #                        format = "pdf"
-  # )
+  system(
+    paste0("quarto render docs/county-summary-pdf/county-summary-pdf.qmd ",
+           "-P county:", county)
+  )
+
+  cli::cli_alert("Report rendered successfully! Saving as PDF...")
+
+  pagedown::chrome_print(here("docs", "county-summary-pdf", "county-summary-pdf.html"),
+                         here("think-tn-map", "docs", "county-summary",
+                              paste0("county-summary-", county, ".pdf")),
+                         options = c(pageRanges = "1-5"),
+                         format = "pdf"
+  )
   
   cli::cli_alert_success(paste0(county, " County summary .pdf saved successfully!"))
   
