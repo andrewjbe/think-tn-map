@@ -19,7 +19,7 @@ knitr:
     warning: false
     message: false
 params:
-  county: "Van Buren"
+  county: "Williamson"
 ---
 
 ```{r}
@@ -248,6 +248,7 @@ supp_race |>
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::percent) +
   scale_fill_manual(name = "", 
+                    breaks = c(params$county, "total"),
                     labels = c(paste(params$county, "County"), "Tennessee"),
                     values = c("#1a884a", "#f8b43c")
   ) +
@@ -298,6 +299,7 @@ supp_age |>
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::percent) +
   scale_fill_manual(name = "", 
+                    breaks = c(params$county, "total"),
                     labels = c(paste(params$county, "County"), "Tennessee"),
                     values = c("#1a884a", "#f8b43c")
   ) +
@@ -352,6 +354,7 @@ supp_income |>
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::percent) +
   scale_fill_manual(name = "", 
+                    breaks = c(params$county, "total"),
                     labels = c(paste(params$county, "County"), "Tennessee"),
                     values = c("#1a884a", "#f8b43c")
   ) +
@@ -468,6 +471,7 @@ supp_debt |>
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::percent) +
   scale_fill_manual(name = "", 
+                    breaks = c(params$county, "total"),
                     labels = c(paste(params$county, "County"), "Tennessee"),
                     values = c("#1a884a", "#f8b43c")
   ) +
@@ -565,6 +569,7 @@ supp_turnout |>
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::percent) +
   scale_fill_manual(name = "", 
+                    breaks = c(params$county, "total"),
                     labels = c(paste(params$county, "County"), "Tennessee"),
                     values = c("#1a884a", "#f8b43c")
   ) +
@@ -621,7 +626,8 @@ supp_housing |>
   scale_x_discrete(guide = guide_axis(angle = 45)) +
   scale_y_continuous(limits = c(0 , NA),
                      labels = scales::comma) +
-  scale_fill_manual(name = "", 
+  scale_fill_manual(name = "",
+                    breaks = c(params$county, "average"),
                     labels = c(paste(params$county, "County"), "Tennessee"),
                     values = c("#1a884a", "#f8b43c")
   ) +
