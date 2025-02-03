@@ -62,23 +62,23 @@ for(county in c(county_list)) {
   
   cli::cli_alert_success(paste0(county, " County summary .pdf saved successfully!"))
   
-  # # County all metrics ---------------------------------------------------------
-  # cli::cli_alert("Rendering report...")
-  # 
-  # system(
-  #   paste0("quarto render docs/one-county-all-metrics/one-county-all-metrics.qmd ",
-  #          "-P county:", county)
-  # )
-  # 
-  # cli::cli_alert("Report rendered successfully! Saving as PDF...")
-  # 
-  # pagedown::chrome_print(here("docs", "one-county-all-metrics", "one-county-all-metrics.html"),
-  #                        here("think-tn-map", "docs", "one-county-all-metrics", 
-  #                             paste0("one-county-all-metrics-", county, ".pdf")),
-  #                        format = "pdf"
-  # )
-  # 
-  # cli::cli_alert_success(paste0(county, " County 'All Metrics' .pdf saved successfully!"))
+  # County all metrics ---------------------------------------------------------
+  cli::cli_alert("Rendering report...")
+
+  system(
+    paste0("quarto render docs/one-county-all-metrics/one-county-all-metrics.qmd ",
+           "-P county:", county)
+  )
+
+  cli::cli_alert("Report rendered successfully! Saving as PDF...")
+
+  pagedown::chrome_print(here("docs", "one-county-all-metrics", "one-county-all-metrics.html"),
+                         here("think-tn-map", "docs", "one-county-all-metrics",
+                              paste0("one-county-all-metrics-", county, ".pdf")),
+                         format = "pdf"
+  )
+
+  cli::cli_alert_success(paste0(county, " County 'All Metrics' .pdf saved successfully!"))
   
 }
 
